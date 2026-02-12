@@ -1,0 +1,290 @@
+import streamlit as st
+import pandas as pd
+from logica_cotizador import SoatQuotator
+from generador_pdf import crear_pdf
+import datetime
+import re
+import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# --- 📧 CONFIGURACIÓN DE CORREO ZOHO ---
+SMTP_SERVER = "smtppro.zoho.com"
+SMTP_PORT = 587
+EMAIL_SENDER = "administracion@yqcorredores.com"
+EMAIL_PASSWORD = "xGFi7d579mhL" 
+EMAIL_RECEIVER = "administracion@yqcorredores.com" 
+
+def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca, modelo, precio_ref):
+    """Envía un correo simple avisando de una nueva cotización vía ZOHO."""
+    try:
+        # Validación: Si la clave es muy corta, asumimos que no está configurada
+        if len(EMAIL_PASSWORD) < 5: 
+            return 
+        
+        subject = f"🔔 Nueva Cotización SOAT: {cliente} ({placa})"
+        body = f"""
+        <h3>Nueva Cotización Generada (Sistema YQ)</h3>
+        <ul>
+            <li><b>ID:</b> {cot_id}</li>
+            <li><b>Fecha:</b> {fecha_hora}</li>
+            <li><b>Rol:</b> {rol}</li>
+            <li><b>Cliente:</b> {cliente}</li>
+            <li><b>Celular:</b> {celular}</li>
+            <li><b>Vehículo:</b> {marca} {modelo} ({placa})</li>
+            <li><b>Precio Ref:</b> S/ {precio_ref}</li>
+        </ul>
+        <p>Descarga el historial actualizado desde el panel ADMIN.</p>
+        """
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = EMAIL_RECEIVER
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html'))
+        
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls() # Seguridad obligatoria para Zoho
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        # No mostramos mensaje en pantalla para no interrumpir al usuario
+    except Exception as e:
+        print(f"❌ Error silencioso enviando correo: {e}")
+
+def guardar_historial(fecha, hora, cot_id, rol, cliente, dni, celular, email, placa, marca, modelo, uso, precio):
+    """Guarda la data en un CSV local."""
+    archivo_csv = "historial_cotizaciones.csv"
+    data = {
+        "Fecha": [fecha], "Hora": [hora], "ID": [cot_id], "Rol": [rol],
+        "Cliente": [cliente], "DNI_RUC": [dni], "Celular": [celular], "Email": [email],
+        "Placa": [placa], "Marca": [marca], "Modelo": [modelo], "Uso": [uso], "Precio_Ref": [precio]
+    }
+    df_new = pd.DataFrame(data)
+    
+    if not os.path.exists(archivo_csv):
+        df_new.to_csv(archivo_csv, index=False, encoding='utf-8-sig')
+    else:
+        df_new.to_csv(archivo_csv, mode='a', header=False, index=False, encoding='utf-8-sig')
+
+st.set_page_config(page_title="Cotizador SOAT Digital", layout="centered", page_icon="🚗")
+
+@st.cache_resource
+def iniciar_motor():
+    motor = SoatQuotator()
+    motor.cargar_datos('rimac.xlsx', 'positiva.xlsx', 'pacifico.xlsx', 'protecta.xlsx', 'mapfre.xlsx')
+    motor.obtener_catalogo_vehiculos()
+    motor.obtener_clases_vehiculo()
+    return motor
+
+try:
+    app = iniciar_motor()
+    catalogo = app.obtener_catalogo_vehiculos()
+    lista_marcas = list(catalogo.keys())
+    lista_clases = app.obtener_clases_vehiculo()
+    carga_exitosa = True
+except Exception as e:
+    st.error(f"Error carga: {e}")
+    carga_exitosa = False
+    lista_marcas = []
+    lista_clases = []
+
+with st.sidebar:
+    if pd.io.common.file_exists("logo.png"): st.image("logo.png")
+    st.info("🔹 MODO CORREDOR ACTIVO")
+
+st.title("COTIZACION SOAT DIGITAL")
+
+if carga_exitosa:
+    # --- 1. DATOS DEL CLIENTE ---
+    st.subheader("1. Datos del Cliente")
+    c1_1, c1_2 = st.columns(2)
+    with c1_1: nombre = st.text_input("Nombre Completo")
+    with c1_2: dni = st.text_input("DNI / RUC", max_chars=11, placeholder="Solo números")
+    
+    c2_1, c2_2 = st.columns(2)
+    with c2_1: placa = st.text_input("Placa", max_chars=6, placeholder="ABC1234").upper()
+    with c2_2: fecha_venc = st.date_input("Vencimiento SOAT", datetime.date.today())
+    
+    c3_1, c3_2 = st.columns(2)
+    with c3_1: celular = st.text_input("Celular / Whatsapp", max_chars=9, placeholder="Ej: 999123456")
+    with c3_2: email = st.text_input("Correo Electrónico", placeholder="cliente@correo.com")
+    
+    st.markdown("---")
+    
+    # --- 2. DATOS DEL VEHICULO ---
+    st.subheader("2. Datos del Vehículo")
+    c1, c2 = st.columns(2)
+    with c1:
+        lista_deptos = sorted([
+            "LIMA", "AREQUIPA", "CUSCO", "LA LIBERTAD", "LAMBAYEQUE", "PIURA", "JUNIN", 
+            "ANCASH", "ICA", "SAN MARTIN", "LORETO", "UCAYALI", "CAJAMARCA", "HUANUCO", 
+            "TACNA", "PUNO", "AYACUCHO", "MOQUEGUA", "AMAZONAS", "APURIMAC", 
+            "HUANCAVELICA", "MADRE DE DIOS", "PASCO", "TUMBES", "CALLAO"
+        ])
+        try: index_def = lista_deptos.index("LIMA")
+        except: index_def = 0
+        depto = st.selectbox("📍 Departamento", lista_deptos, index=index_def)
+        
+        uso = st.selectbox("📋 Uso", ["PARTICULAR", "TAXI", "CARGA", "TRANSPORTE PERSONAL", "URBANO", "INTERPROVINCIAL", "COMERCIAL"])
+        
+        if not lista_clases: lista_clases = ["AUTOMOVIL", "SUV", "PICK UP"]
+        clase = st.selectbox("🚙 Clase", lista_clases)
+        
+        asientos = st.number_input("💺 Asientos", 1, 70, 5)
+        
+    with c2:
+        marca = st.selectbox("🚘 Marca", ["OTRA MARCA"] + lista_marcas)
+        if marca == "OTRA MARCA":
+            marca_txt = st.text_input("Ingresa Marca:").upper()
+            modelo_opts = []
+        else:
+            marca_txt = marca
+            modelo_opts = catalogo.get(marca, [])
+        
+        usar_manual = st.checkbox("✍️ Escribir modelo manualmente")
+        if usar_manual:
+            modelo_txt = st.text_input("Escribe el Modelo:", "").upper()
+        else:
+            mod = st.selectbox("🚙 Modelo", modelo_opts + ["OTRO MODELO"])
+            modelo_txt = st.text_input("Especificar Otro:", "").upper() if mod == "OTRO MODELO" else mod
+
+    st.markdown("---")
+
+    # --- 3. CODIGO ADMIN ---
+    col_code, col_btn = st.columns([1, 1])
+    with col_code:
+        codigo_admin = st.text_input("Código de Descuento (Opcional)", type="password", placeholder="Si tienes uno, ingrésalo aquí")
+    
+    es_admin = (codigo_admin == "ADMIN2026")
+
+    # BOTÓN DE DESCARGA HISTORIAL (SOLO ADMIN)
+    if es_admin and os.path.exists("historial_cotizaciones.csv"):
+        with open("historial_cotizaciones.csv", "rb") as f:
+            st.download_button(
+                label="📥 DESCARGAR HISTORIAL DE COTIZACIONES",
+                data=f,
+                file_name=f"Historial_SOAT_{datetime.datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+    if 'res' not in st.session_state: st.session_state.res = None
+    if 'id' not in st.session_state: st.session_state.id = None
+
+    # BOTÓN COTIZAR
+    if col_btn.button("🔍 GENERAR COTIZACIÓN", use_container_width=True):
+        errores = []
+        # Validación Universal
+        if not nombre: errores.append("Falta el Nombre.")
+        if not dni or not dni.isdigit(): errores.append("Ingrese un DNI/RUC válido (solo números).")
+        if not marca_txt or not modelo_txt: errores.append("Faltan datos del vehículo.")
+        if not placa or len(placa) != 6 or not placa.isalnum(): errores.append("La PLACA debe tener exactamente 6 caracteres alfanuméricos.")
+        
+        # Validación Condicional (Solo si NO es admin)
+        if not es_admin:
+            if not celular or not celular.isdigit() or len(celular) < 9: errores.append("Ingrese un celular válido.")
+            if not email or "@" not in email: errores.append("Ingrese un correo válido.")
+
+        if errores:
+            for e in errores: st.error(e)
+        else:
+            with st.spinner("Cotizando..."):
+                df = app.cotizar(depto, uso, clase, asientos, marca_txt, modelo_txt)
+                st.session_state.res = df
+                st.session_state.id = f"2000-{datetime.datetime.now().strftime('%m%d-%H%M')}"
+                
+                # --- ACCIONES POST-COTIZACIÓN ---
+                rol_actual = "ADMIN" if es_admin else "CLIENTE"
+                precio_ref = df.iloc[0]['Precio'] if not df.empty else 0
+                
+                now = datetime.datetime.now()
+                fecha_log = now.strftime('%Y-%m-%d')
+                hora_log = now.strftime('%H:%M:%S')
+                fecha_email = now.strftime('%d/%m/%Y %I:%M %p')
+                
+                # 1. Guardar Historial (SIEMPRE)
+                guardar_historial(fecha_log, hora_log, st.session_state.id, rol_actual, nombre, dni, celular, email, placa, marca_txt, modelo_txt, uso, precio_ref)
+                
+                # 2. Enviar Notificación (SOLO SI NO ES ADMIN)
+                if not es_admin:
+                    enviar_notificacion(st.session_state.id, fecha_email, rol_actual, nombre, celular, placa, marca_txt, modelo_txt, precio_ref)
+
+    if st.session_state.res is not None:
+        df = st.session_state.res.copy()
+        df_visible = df[df['Precio'] != "Consultar"]
+        
+        if not df_visible.empty:
+            st.success(f"Cotización N° {st.session_state.id}")
+            if es_admin:
+                st.info("🔓 MODO ADMINISTRADOR ACTIVADO")
+            
+            df_visible['Precio_Num'] = pd.to_numeric(df_visible['Precio'], errors='coerce').fillna(0)
+            df_visible['Comisión S/.'] = (df_visible['Precio_Num'] / 1.2154) * df_visible['Comision_pct']
+            df_visible['% Com'] = df_visible['Comision_pct'].apply(lambda x: f"{x*100:.0f}%")
+            
+            html_rows = ""
+            for _, row in df_visible.iterrows():
+                # Lógica Precio Visual
+                precio_cell = ""
+                tiene_promo = row['Tiene_Campaña'] and row['Precio_Lista'] != "Consultar"
+                if tiene_promo:
+                    try:
+                        p_old = float(row['Precio_Lista'])
+                        p_new = float(row['Precio'])
+                        if p_new < p_old:
+                            precio_cell = f"<div style='line-height:1.2;'><span style='text-decoration:line-through; color:#999; font-size:13px;'>S/ {p_old:.2f}</span><br><span style='color:#d32f2f; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span></div>"
+                        else:
+                            precio_cell = f"<span style='color:#333; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span>"
+                    except:
+                        precio_cell = f"<span style='color:#333; font-weight:bold; font-size:16px;'>{row['Precio']}</span>"
+                else:
+                    try: val = float(row['Precio']); precio_cell = f"<span style='color:#333; font-weight:bold; font-size:16px;'>S/ {val:.2f}</span>"
+                    except: precio_cell = f"<span style='color:#333; font-weight:bold; font-size:16px;'>{row['Precio']}</span>"
+
+                # Observaciones
+                obs_txt = str(row['Observaciones']).replace('🔥', '').strip()
+                if obs_txt == "nan": obs_txt = ""
+                
+                # Filas
+                if es_admin:
+                    com_txt = f"{row['% Com']} (S/ {row['Comisión S/.']:.2f})"
+                    grupo_txt = str(row.get('Grupo', '-'))
+                    html_rows += f"<tr style='border-bottom:1px solid #eee;'><td style='padding:12px; color:#000;'><b>{row['Aseguradora']}</b></td><td style='padding:12px; color:#333; font-weight:bold;'>{grupo_txt}</td><td style='padding:12px;'>{precio_cell}</td><td style='padding:12px; color:#555;'>{com_txt}</td><td style='padding:12px; font-size:13px; color:#666;'>{obs_txt}</td></tr>"
+                else:
+                    html_rows += f"<tr style='border-bottom:1px solid #eee;'><td style='padding:12px; color:#000;'><b>{row['Aseguradora']}</b></td><td style='padding:12px;'>{precio_cell}</td><td style='padding:12px; font-size:13px; color:#666;'>{obs_txt}</td></tr>"
+
+            # Cabecera
+            if es_admin:
+                header = "<th style='padding:10px; text-align:left; color:#333;'>ASEGURADORA</th><th style='padding:10px; text-align:left; color:#333;'>GRUPO</th><th style='padding:10px; text-align:left; color:#333;'>PRECIO</th><th style='padding:10px; text-align:left; color:#333;'>COMISIÓN</th><th style='padding:10px; text-align:left; color:#333;'>OBSERVACIONES</th>"
+            else:
+                header = "<th style='padding:10px; text-align:left; color:#333;'>ASEGURADORA</th><th style='padding:10px; text-align:left; color:#333;'>PRECIO FINAL</th><th style='padding:10px; text-align:left; color:#333;'>OBSERVACIONES</th>"
+
+            final_html = f"<div style='font-family:sans-serif;'><table style='width:100%; border-collapse:collapse;'><thead><tr style='background-color:#f0f2f6; border-bottom:2px solid #ddd;'>{header}</tr></thead><tbody>{html_rows}</tbody></table></div>"
+            st.markdown(final_html, unsafe_allow_html=True)
+            
+            # --- PDF ---
+            obs_pdf = " / ".join(df_visible[df_visible['Observaciones'] != ""]['Observaciones'].unique())
+            obs_pdf = obs_pdf.replace('🔥', '').strip()
+            
+            campanas_list = df_visible[df_visible['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
+            campanas_txt = ", ".join(campanas_list) if campanas_list else ""
+
+            pdf_bytes = crear_pdf(
+                cotizacion_nro=st.session_state.id,
+                cliente=nombre, dni_ruc=dni, celular=celular, email=email,
+                placa=placa, marca=marca_txt, modelo=modelo_txt,
+                uso=uso, clase=clase, asientos=asientos, region=depto,
+                fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'),
+                df_resultados=df_visible,
+                observaciones_especiales=obs_pdf,
+                campanas_activas_txt=campanas_txt
+            )
+            
+            def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
+            fecha_hora = datetime.datetime.now().strftime('%d%m%y_%H%M')
+            nombre_archivo = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{fecha_hora}.pdf"
+            
+            st.download_button("📄 Descargar PDF", pdf_bytes, nombre_archivo, "application/pdf", type="primary")
+        else:
+            st.error("No hay precios disponibles.")
