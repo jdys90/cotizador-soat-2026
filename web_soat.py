@@ -13,8 +13,16 @@ from email.mime.multipart import MIMEMultipart
 SMTP_SERVER = "smtppro.zoho.com"
 SMTP_PORT = 587
 EMAIL_SENDER = "administracion@yqcorredores.com"
-EMAIL_PASSWORD = "xGFi7d579mhL" 
 EMAIL_RECEIVER = "administracion@yqcorredores.com" 
+
+# 👇 CAMBIO IMPORTANTE: YA NO ESCRIBIMOS LA CLAVE AQUÍ
+# Le decimos al sistema que la busque en los "Secretos"
+try:
+    EMAIL_PASSWORD = st.secrets["EMAIL_PASSWORD"]
+except FileNotFoundError:
+    # Esto es por si corres la app en tu PC y no has configurado el archivo de secretos
+    EMAIL_PASSWORD = "" 
+    st.warning("⚠️ Falta configurar el secreto del correo.")
 
 def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca, modelo, precio_ref):
     """Envía un correo simple avisando de una nueva cotización vía ZOHO."""
@@ -287,4 +295,5 @@ if carga_exitosa:
             
             st.download_button("📄 Descargar PDF", pdf_bytes, nombre_archivo, "application/pdf", type="primary")
         else:
+
             st.error("No hay precios disponibles.")
