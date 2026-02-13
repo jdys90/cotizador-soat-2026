@@ -174,11 +174,25 @@ if carga_exitosa:
         uso = st.selectbox("📋 Uso", ["PARTICULAR", "TAXI", "CARGA", "TRANSPORTE PERSONAL", "URBANO", "INTERPROVINCIAL", "COMERCIAL","AMBULANCIA","SERVICIO ESCOLAR"])
         
         # --- MEJORA UX: Nombres amigables para el cliente ---
-        mapa_clases = {
-            "AUTOMOVIL": "AUTOMOVIL",
+         mapa_clases = {
+            "AUTOMÓVIL": "AUTOMOVIL",
+            "STATION WAGON": "SW",
             "CAMIONETA RURAL / SUV": "SUV",
-            "CAMIONETA PICK UP": "PICK UP",
-            "STATION WAGON": "SW"
+            "MULTIPROPÓSITO": "MULTIPROPOSITO",
+            "CAMIONETA PANEL": "PANEL",
+            "CAMIONETA VAN": "VAN",
+            "MICROBUS": "MICROBUS",
+            "MINIBUS": "MINIBUS",
+            "OMNIBUS": "OMNIBUS",
+            "CAMIONETA PICK UP": "PICK UP",      
+            "CAMIÓN BARANDA / FURGÓN": "CAMION",
+            "CAMIÓN REMOLCADOR": "REMOLCADOR",
+            "MAQUINARIA PESADA": "MAQUINARIA PESADA",
+            "MOTO LINEAL":"MOTICLETA",
+            "MOTO ELÉCTRICA":"MOTOCICLETA ELECTRICA",
+            "TRIMOTO": "TRIMOTO",
+            "CUATRIMOTO": "CUATRIMOTO",
+            "MOTO FURGONETA": "FURGONETA"
         }
         clase_display = st.selectbox("🚙 Clase", list(mapa_clases.keys()))
         clase_interna = mapa_clases[clase_display]
@@ -334,3 +348,4 @@ if carga_exitosa:
             st.download_button("📄 Descargar PDF", pdf_bytes, nombre_archivo, "application/pdf", type="primary")
         else:
             st.error("No hay precios disponibles.")
+
