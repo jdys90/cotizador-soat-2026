@@ -188,8 +188,8 @@ if carga_exitosa:
             "CAMIÓN BARANDA / FURGÓN": "CAMION",
             "CAMIÓN REMOLCADOR": "REMOLCADOR",
             "MAQUINARIA PESADA": "MAQUINARIA PESADA",
-            "MOTO LINEAL":"MOTICLETA",
-            "MOTO ELÉCTRICA":"MOTOCICLETA ELECTRICA",
+            "MOTO LINEAL": "MOTICLETA",
+            "MOTO ELÉCTRICA": "MOTOCICLETA ELECTRICA",
             "TRIMOTO": "TRIMOTO",
             "CUATRIMOTO": "CUATRIMOTO",
             "MOTO FURGONETA": "FURGONETA"
@@ -348,4 +348,5 @@ if carga_exitosa:
             st.download_button("📄 Descargar PDF", pdf_bytes, nombre_archivo, "application/pdf", type="primary")
         else:
             st.error("No hay precios disponibles.")
+
 
