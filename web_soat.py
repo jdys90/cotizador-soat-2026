@@ -96,6 +96,7 @@ def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca,
             <li><b>Fecha:</b> {fecha_hora}</li>
             <li><b>Rol:</b> {rol}</li>
             <li><b>Cliente:</b> {cliente}</li>
+            <li><b>DNI:</b> {dni}</li> <li><b>Celular:</b> {celular}</li>
             <li><b>Vehículo:</b> {marca} {modelo} ({placa})</li>
             <li><b>Mejor Oferta:</b> S/ {precio_min} ({cia_min})</li>
         </ul>
@@ -352,6 +353,7 @@ if carga_exitosa:
             st.download_button("📄 Descargar PDF", pdf_bytes, nombre_archivo, "application/pdf", type="primary")
         else:
             st.error("No hay precios disponibles.")
+
 
 
 
