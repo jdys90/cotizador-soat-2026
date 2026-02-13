@@ -7,6 +7,7 @@ import re
 import os
 import smtplib
 import gspread
+import pytz # LIBRERÍA PARA ZONA HORARIA
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -251,6 +252,9 @@ if carga_exitosa:
             for e in errores: st.error(e)
         else:
             with st.spinner("Cotizando..."):
+                # OBTENER HORA EXACTA PERÚ
+                peru_tz = pytz.timezone('America/Lima')
+                now = datetime.datetime.now(peru_tz) # <-- AQUÍ ESTÁ EL CAMBIO CLAVE
                 df = app.cotizar(depto, uso, clase_interna, asientos, marca_txt, modelo_txt)
                 st.session_state.res = df
                 st.session_state.id = f"2000-{datetime.datetime.now().strftime('%m%d-%H%M')}"
@@ -274,7 +278,7 @@ if carga_exitosa:
                         min_campana = "SI" if mejor['Tiene_Campaña'] else "NO"
                         precio_ref = min_precio
                 
-                now = datetime.datetime.now()
+              # FORMATOS DE FECHA LOCALIZADOS
                 f_log = now.strftime('%Y-%m-%d')
                 h_log = now.strftime('%H:%M:%S')
                 f_email = now.strftime('%d/%m/%Y %I:%M %p')
@@ -348,6 +352,7 @@ if carga_exitosa:
             st.download_button("📄 Descargar PDF", pdf_bytes, nombre_archivo, "application/pdf", type="primary")
         else:
             st.error("No hay precios disponibles.")
+
 
 
 
