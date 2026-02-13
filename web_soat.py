@@ -174,7 +174,7 @@ if carga_exitosa:
         uso = st.selectbox("📋 Uso", ["PARTICULAR", "TAXI", "CARGA", "TRANSPORTE PERSONAL", "URBANO", "INTERPROVINCIAL", "COMERCIAL","AMBULANCIA","SERVICIO ESCOLAR"])
         
         # --- MEJORA UX: Nombres amigables para el cliente ---
-         mapa_clases = {
+        mapa_clases = {
             "AUTOMÓVIL": "AUTOMOVIL",
             "STATION WAGON": "SW",
             "CAMIONETA RURAL / SUV": "SUV",
@@ -348,5 +348,6 @@ if carga_exitosa:
             st.download_button("📄 Descargar PDF", pdf_bytes, nombre_archivo, "application/pdf", type="primary")
         else:
             st.error("No hay precios disponibles.")
+
 
 
