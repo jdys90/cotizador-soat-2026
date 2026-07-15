@@ -118,7 +118,7 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
         x_btn = pdf.get_x()
         pdf.cell(90, h_row, "", "B", 0)
         msg = f"Hola, deseo el SOAT de {row['Aseguradora']} a S/ {row['Precio']}. Placa: {placa}"
-        link = f"https://wa.me/51999999999?text={msg.replace(' ', '%20')}"
+        link = f"https://wa.me/51957331099?text={msg.replace(' ', '%20')}"
         pdf.set_fill_color(*VERDE_WA)
         pdf.rect(x_btn + 15, y_start + 3, 60, 8, 'F')
         pdf.set_xy(x_btn + 15, y_start + 3)
