@@ -151,7 +151,7 @@ if carga_exitosa:
     
     c2_1, c2_2 = st.columns(2)
     with c2_1: placa = st.text_input("Placa", max_chars=6, placeholder="ABC1234").upper()
-    with c2_2: fecha_venc = st.date_input("Vencimiento SOAT", datetime.date.today())
+    with c2_2: fecha_venc = st.date_input("Vencimiento SOAT", datetime.date.today(), format="DD/MM/YYYY")
     
     c3_1, c3_2 = st.columns(2)
     with c3_1: celular = st.text_input("Celular / Whatsapp", max_chars=9, placeholder="Ej: 999123456")
