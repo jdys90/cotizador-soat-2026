@@ -1,6 +1,27 @@
 from fpdf import FPDF
 from datetime import datetime
 import os
+import fitz # Esta es la librería PyMuPDF
+import io
+
+def exportar_pdf_a_png(pdf_bytes):
+    """
+    Toma los bytes de un PDF y devuelve los bytes de una imagen PNG usando PyMuPDF.
+    """
+    try:
+        # Abrir el documento desde la memoria RAM
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        # Seleccionar la primera página
+        pagina = doc.load_page(0)
+        # Convertir a imagen con un poco de zoom para que se vea en alta calidad (matrix)
+        mat = fitz.Matrix(2, 2)
+        pix = pagina.get_pixmap(matrix=mat)
+        # Devolver los bytes de la imagen
+        return pix.tobytes("png")
+    except Exception as e:
+        print(f"Error crítico en conversión a PNG: {e}")
+        return None
+
 
 # COLORES CORPORATIVOS (AZUL ELECTRICO)
 AZUL = (0, 102, 204)     
@@ -26,17 +47,25 @@ class PDF(FPDF):
         self.cell(0, 8, f"  {title}", 0, 1, 'L', fill=True)
         self.ln(3)
 
+
 # AÑADIDO PARAMETRO dni_ruc
 def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, modelo, uso, clase, asientos, region, fecha_vencimiento, df_resultados, observaciones_especiales="", campanas_activas_txt=""):
-    pdf = PDF()
+  
+    # En la clase PDF o donde haces pdf = PDF()
+    pdf = PDF(orientation='P', unit='mm', format='A4')
+    pdf.set_margins(10, 10, 10) # Márgenes estrechos (10mm en lugar de los usuales 20mm)
+    pdf.set_auto_page_break(False) # Desactiva el salto automático para controlar mejor el final
+
     pdf.add_page()
-    
+
     # --- 1. RESUMEN ---
     pdf.section_title("RESUMEN DE SOLICITUD")
     
     pdf.set_fill_color(*FONDO)
     pdf.rect(pdf.get_x(), pdf.get_y(), 190, 42, 'F') 
-    y_ini = pdf.get_y() + 5
+    y_ini = pdf.get_y() + 2
+
+
     
     # Columna Izq
     pdf.set_xy(15, y_ini); pdf.set_text_color(*NEGRO)
@@ -80,7 +109,7 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
     pdf.cell(90, 10, "SOLICITUD", 1, 1, 'C', fill=True)
     
     for _, row in df_resultados.iterrows():
-        h_row = 14
+        h_row = 12
         x_start = pdf.get_x(); y_start = pdf.get_y()
         
         pdf.set_font('Arial', '', 10); pdf.set_text_color(*NEGRO)
@@ -141,11 +170,11 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
     
     for t, m, d in coberturas:
         pdf.set_font('Arial', 'B', 9); pdf.set_text_color(*AZUL)
-        pdf.cell(50, 8, t, "B", 0, 'L')
+        pdf.cell(50, 6, t, "B", 0, 'L')
         pdf.set_font('Arial', 'B', 9); pdf.set_text_color(0, 100, 0)
-        pdf.cell(40, 8, m, "B", 0, 'L')
+        pdf.cell(40, 6, m, "B", 0, 'L')
         pdf.set_font('Arial', '', 8); pdf.set_text_color(100,100,100)
-        pdf.cell(0, 8, d, "B", 1, 'L')
+        pdf.cell(0, 6, d, "B", 1, 'L')
 
     # --- 4. PIE ---
     pdf.ln(8)
@@ -154,7 +183,7 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
     
     pdf.cell(0, 4, "Precios incluyen IGV.", 0, 1, 'L')
     pdf.cell(0, 4, "Vigencia de la cotización: 24 horas.", 0, 1, 'L')
-    pdf.cell(0, 4, "*La cobertura inicia inmediatamente después de la emisión y pago.", 0, 1, 'L')
+    pdf.cell(0, 4, "*La cobertura inicia inmediatamente después de la emisión y pago; o de acuerdo a la fecha futura indica.", 0, 1, 'L')
     
     if campanas_activas_txt:
         pdf.set_font('Arial', 'B', 8)

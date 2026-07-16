@@ -7,6 +7,41 @@ from datetime import datetime
 
 warnings.filterwarnings('ignore')
 
+class AdministradorTarifas:
+    def __init__(self, ruta_directorio_csv):
+        self.ruta = ruta_directorio_csv
+
+    def obtener_tarifario(self, aseguradora):
+        """Lee el CSV actual y lo devuelve como un DataFrame de Pandas"""
+        archivo = f"{self.ruta}/{aseguradora.lower()}_TARIFARIO.csv"
+        if os.path.exists(archivo):
+            return pd.read_csv(archivo)
+        return None
+
+    def actualizar_precio(self, aseguradora, id_fila, nuevo_precio):
+        """Actualiza un precio específico y guarda el archivo"""
+        archivo = f"{self.ruta}/{aseguradora.lower()}_TARIFARIO.csv"
+        df = pd.read_csv(archivo)
+        
+        # Asumiendo que tienes una columna 'ID' o puedes filtrar por 'Zona' y 'Grupo'
+        df.loc[df['ID'] == id_fila, 'Precio'] = nuevo_precio
+        
+        # Guardar los cambios en el CSV
+        df.to_csv(archivo, index=False)
+        return "Precio actualizado con éxito."
+
+    def agregar_opcion(self, aseguradora, nueva_fila_dict):
+        """Añade una nueva zona o grupo al tarifario"""
+        archivo = f"{self.ruta}/{aseguradora.lower()}_TARIFARIO.csv"
+        df = pd.read_csv(archivo)
+        
+        # Convertir el diccionario en un DataFrame y concatenar
+        nuevo_df = pd.DataFrame([nueva_fila_dict])
+        df = pd.concat([df, nuevo_df], ignore_index=True)
+        
+        df.to_csv(archivo, index=False)
+        return "Opción agregada."
+    
 class SoatQuotator:
     def __init__(self):
         self.data_tarifarios = {}

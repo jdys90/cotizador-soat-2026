@@ -1,15 +1,129 @@
 import streamlit as st
 import pandas as pd
-from logica_cotizador import SoatQuotator
-from generador_pdf import crear_pdf
 import datetime
 import re
 import os
 import smtplib
 import gspread
 import pytz # LIBRERÍA PARA ZONA HORARIA
+
+
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+from logica_cotizador import SoatQuotator
+
+# 👇 AQUÍ ESTÁ LA MAGIA: Importamos ambas funciones desde generador_pdf
+from generador_pdf import crear_pdf, exportar_pdf_a_png 
+
+# ... (El resto de tu código, como def mostrar_panel_administrador():) ...
+def aplicar_estilos_css():
+    st.markdown("""
+    <style>
+        :root {
+            /* Modo Día */
+            --bg-color: #F8F9FA;
+            --table-bg: #FFFFFF;
+            --text-main: #212529;
+            --header-bg: #f0f2f6;
+            --accent-color: #0066CC;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --table-bg: #1E1E1E;
+                --text-main: #E0E0E0;
+                --header-bg: #2D2D2D;
+                --accent-color: #4D9FE5;
+            }
+        }
+
+      /* Aplicación global de estilos */
+        .stApp {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+        
+        /* Estilos específicos para tus tablas de cotización */
+        table {
+            background-color: var(--table-bg) !important;
+            color: var(--text-main) !important;
+        }
+        
+        /* Botón de acción principal */
+        .stButton>button {
+            background-color: var(--accent-color) !important;
+            color: white !important;
+            border-radius: 5px;
+                /* Opcional: efecto hover (cuando pasas el mouse) */
+    div[data-testid="stButton>button"] button:hover {
+        opacity: 0.9;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+# Llama a la función al inicio de tu script
+aplicar_estilos_css()
+
+def mostrar_panel_administrador():
+    """Muestra el panel de edición de tarifas con soporte para múltiples hojas."""
+    st.header("⚙️ Panel de Administración de Tarifas")
+    st.info("💡 Haz doble clic en cualquier celda para modificarla. Usa la última fila vacía para agregar nuevas opciones.")
+
+    DIRECTORIO_ACTUAL = os.path.dirname(os.path.abspath(__file__))
+    aseguradoras = ["rimac", "pacifico", "mapfre", "positiva", "protecta"]
+    
+    # 1. Selector de aseguradora
+    aseguradora = st.selectbox("Selecciona la Aseguradora a editar:", aseguradoras)
+    
+    nombre_archivo = f"{aseguradora}.xlsx"
+    ruta_archivo = os.path.join(DIRECTORIO_ACTUAL, nombre_archivo)
+
+    if os.path.exists(ruta_archivo):
+        try:
+            # 2. Leemos el archivo Excel para descubrir qué hojas tiene adentro
+            xls = pd.ExcelFile(ruta_archivo)
+            hojas_disponibles = xls.sheet_names
+            
+            # 3. Selector de hoja
+            hoja_seleccionada = st.selectbox("Selecciona la hoja que deseas editar (ej. Tarifario, Modelos):", hojas_disponibles)
+            
+            # 4. Cargamos solo la hoja que el usuario eligió
+            df_hoja = pd.read_excel(ruta_archivo, sheet_name=hoja_seleccionada)
+
+            # 👇 --- NUEVO CÓDIGO: LIMPIEZA DE COLUMNAS MIXTAS --- 👇
+            # Forzamos a que las columnas problemáticas sean tratadas como texto puro
+            for col in df_hoja.columns:
+                if df_hoja[col].dtype == 'object':
+                    df_hoja[col] = df_hoja[col].fillna("").astype(str)
+            # --------------------------------------------------------
+            
+            # 5. Mostramos el editor de datos
+            df_editado = st.data_editor(
+                df_hoja, 
+                num_rows="dynamic", 
+                use_container_width=True,
+                # Usamos una clave única para que Streamlit no confunda las tablas al cambiar de hoja
+                key=f"editor_{aseguradora}_{hoja_seleccionada}" 
+            )
+            
+            # 6. Guardado Blindado (Evita borrar las otras hojas)
+            if st.button("💾 Guardar Cambios Definitivos", type="primary"):
+                try:
+                    # Usamos ExcelWriter en modo 'a' (append/añadir) y 'replace' (reemplazar solo esta hoja)
+                    with pd.ExcelWriter(ruta_archivo, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                        df_editado.to_excel(writer, sheet_name=hoja_seleccionada, index=False)
+                        
+                    st.success(f"✅ ¡La hoja '{hoja_seleccionada}' de {aseguradora.capitalize()} se actualizó de forma segura!")
+                except Exception as e:
+                    st.error(f"Error crítico al intentar guardar el archivo: {e}")
+                    
+        except Exception as e:
+            st.error(f"Error al leer el archivo Excel. Asegúrate de que no esté corrupto: {e}")
+    else:
+        st.error(f"No se encontró el archivo en: {ruta_archivo}")
+
 
 # --- 📧 CONFIGURACIÓN DE CORREO ZOHO ---
 SMTP_SERVER = "smtppro.zoho.com"
@@ -151,7 +265,7 @@ if carga_exitosa:
     
     c2_1, c2_2 = st.columns(2)
     with c2_1: placa = st.text_input("Placa", max_chars=6, placeholder="ABC1234").upper()
-    with c2_2: fecha_venc = st.date_input("Vencimiento SOAT", datetime.date.today(), format="DD/MM/YYYY")
+    with c2_2: fecha_venc = st.date_input("Vencimiento SOAT", datetime.date.today(), format="dd/dd/yyyy")
     
     c3_1, c3_2 = st.columns(2)
     with c3_1: celular = st.text_input("Celular / Whatsapp", max_chars=9, placeholder="Ej: 999123456")
@@ -227,6 +341,8 @@ if carga_exitosa:
     es_admin = (codigo_admin == "ADMIN2026")
 
     if es_admin:
+        # Llama a la función AQUÍ para que aparezca la tabla
+    
         if st.button("📥 DESCARGAR HISTORIAL (Google Sheets)"):
             df_historial = descargar_historial_google()
             if not df_historial.empty:
@@ -289,73 +405,158 @@ if carga_exitosa:
                 
                 if not es_admin:
                     enviar_notificacion(st.session_state.id, f_email, rol_actual, nombre, celular, placa, marca_txt, modelo_txt, min_precio, min_cia)
+        df_visible = pd.DataFrame() 
 
-    if st.session_state.res is not None:
-        df = st.session_state.res.copy()
-        df_visible = df[df['Precio'] != "Consultar"]
+if st.session_state.res is not None:
+# 1. TRUCO DE MEMORIA: Creamos una copia editable que no se sobreescriba al recargar
+    if 'id_cotizacion_actual' not in st.session_state or st.session_state.id_cotizacion_actual != st.session_state.id:
+        df_base = st.session_state.res.copy()
+        st.session_state.df_editable = df_base[df_base['Precio'] != "Consultar"]
+        st.session_state.id_cotizacion_actual = st.session_state.id
+
+    # Usamos nuestra copia editable
+    df_visible = st.session_state.df_editable
+
+    if not df_visible.empty:
+        st.success(f"Cotización N° {st.session_state.id}")
+        if es_admin: 
+            st.info("🔓 MODO CORREDOR ACTIVADO - Ajusta los precios u observaciones antes de generar el PDF:")
+        # 2. INYECTAMOS EL EDITOR DE DATOS SOLO PARA EL ADMIN
+            df_visible = st.data_editor(
+                df_visible,
+                # Bloqueamos lo que no se debe tocar para no romper la lógica
+                disabled=["Aseguradora", "Grupo", "Comision_pct", "Tiene_Campaña", "Precio_Lista"],
+                use_container_width=True,
+                hide_index=True,
+                key=f"editor_rapido_{st.session_state.id}"
+            )
+            # 3. Guardamos los cambios inmediatamente en la memoria
+            st.session_state.df_editable = df_visible
+            st.markdown("---") # Separador visual
+            
+        df_visible['Precio_Num'] = pd.to_numeric(df_visible['Precio'], errors='coerce').fillna(0)
+        df_visible['Comisión S/.'] = (df_visible['Precio_Num'] / 1.2154) * df_visible['Comision_pct']
+        df_visible['% Com'] = df_visible['Comision_pct'].apply(lambda x: f"{x*100:.0f}%")
         
-        if not df_visible.empty:
-            st.success(f"Cotización N° {st.session_state.id}")
-            if es_admin: st.info("🔓 MODO CORREDOR ACTIVADO")
-            
-            df_visible['Precio_Num'] = pd.to_numeric(df_visible['Precio'], errors='coerce').fillna(0)
-            df_visible['Comisión S/.'] = (df_visible['Precio_Num'] / 1.2154) * df_visible['Comision_pct']
-            df_visible['% Com'] = df_visible['Comision_pct'].apply(lambda x: f"{x*100:.0f}%")
-            
-            html_rows = ""
-            for _, row in df_visible.iterrows():
-                precio_cell = ""
-                tiene_promo = row['Tiene_Campaña'] and row['Precio_Lista'] != "Consultar"
-                if tiene_promo:
-                    try:
-                        p_old = float(row['Precio_Lista']); p_new = float(row['Precio'])
-                        if p_new < p_old: precio_cell = f"<div style='line-height:1.2;'><span style='text-decoration:line-through; color:#999; font-size:13px;'>S/ {p_old:.2f}</span><br><span style='color:#d32f2f; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span></div>"
-                        else: precio_cell = f"<span style='color:#333; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span>"
-                    except: precio_cell = f"<span style='color:#333; font-weight:bold; font-size:16px;'>{row['Precio']}</span>"
-                else:
-                    try: val = float(row['Precio']); precio_cell = f"<span style='color:#333; font-weight:bold; font-size:16px;'>S/ {val:.2f}</span>"
-                    except: precio_cell = f"<span style='color:#333; font-weight:bold; font-size:16px;'>{row['Precio']}</span>"
-
-                obs_txt = str(row['Observaciones']).replace('🔥', '').strip()
-                if obs_txt == "nan": obs_txt = ""
-                
-                if es_admin:
-                    com_txt = f"{row['% Com']} (S/ {row['Comisión S/.']:.2f})"
-                    grupo_txt = str(row.get('Grupo', '-'))
-                    html_rows += f"<tr style='border-bottom:1px solid #eee;'><td style='padding:12px; color:#000;'><b>{row['Aseguradora']}</b></td><td style='padding:12px; color:#333; font-weight:bold;'>{grupo_txt}</td><td style='padding:12px;'>{precio_cell}</td><td style='padding:12px; color:#555;'>{com_txt}</td><td style='padding:12px; font-size:13px; color:#666;'>{obs_txt}</td></tr>"
-                else:
-                    html_rows += f"<tr style='border-bottom:1px solid #eee;'><td style='padding:12px; color:#000;'><b>{row['Aseguradora']}</b></td><td style='padding:12px;'>{precio_cell}</td><td style='padding:12px; font-size:13px; color:#666;'>{obs_txt}</td></tr>"
-
-            if es_admin:
-                header = "<th style='padding:10px; text-align:left; color:#333;'>ASEGURADORA</th><th style='padding:10px; text-align:left; color:#333;'>GRUPO</th><th style='padding:10px; text-align:left; color:#333;'>PRECIO</th><th style='padding:10px; text-align:left; color:#333;'>COMISIÓN</th><th style='padding:10px; text-align:left; color:#333;'>OBSERVACIONES</th>"
+        html_rows = ""
+        for _, row in df_visible.iterrows():
+            # Nota: Dejamos algunos colores específicos (como rojo para descuentos) 
+            # porque son lógica de negocio, no solo diseño.
+            precio_cell = ""
+            tiene_promo = row['Tiene_Campaña'] and row['Precio_Lista'] != "Consultar"
+            if tiene_promo:
+                try:
+                    p_old = float(row['Precio_Lista']); p_new = float(row['Precio'])
+                    if p_new < p_old: 
+                        precio_cell = f"<div><span style='text-decoration:line-through; color:#999; font-size:13px;'>S/ {p_old:.2f}</span><br><span style='color:#d32f2f; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span></div>"
+                    else: precio_cell = f"<span style='color:inherit; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span>"
+                except: precio_cell = f"<span style='color:inherit; font-weight:bold; font-size:16px;'>{row['Precio']}</span>"
             else:
-                header = "<th style='padding:10px; text-align:left; color:#333;'>ASEGURADORA</th><th style='padding:10px; text-align:left; color:#333;'>PRECIO FINAL</th><th style='padding:10px; text-align:left; color:#333;'>OBSERVACIONES</th>"
+                try: val = float(row['Precio']); precio_cell = f"<span style='color:inherit; font-weight:bold; font-size:16px;'>S/ {val:.2f}</span>"
+                except: precio_cell = f"<span style='color:inherit; font-weight:bold; font-size:16px;'>{row['Precio']}</span>"
 
-            st.markdown(f"<div style='font-family:sans-serif;'><table style='width:100%; border-collapse:collapse;'><thead><tr style='background-color:#f0f2f6; border-bottom:2px solid #ddd;'>{header}</tr></thead><tbody>{html_rows}</tbody></table></div>", unsafe_allow_html=True)
+            obs_txt = str(row['Observaciones']).replace('🔥', '').strip()
+            if obs_txt == "nan": obs_txt = ""
             
-            obs_pdf = " / ".join(df_visible[df_visible['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
-            campanas_list = df_visible[df_visible['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
-            campanas_txt = ", ".join(campanas_list) if campanas_list else ""
+            if es_admin:
+                com_txt = f"{row['% Com']} (S/ {row['Comisión S/.']:.2f})"
+                grupo_txt = str(row.get('Grupo', '-'))
+                html_rows += f"<tr><td><b>{row['Aseguradora']}</b></td><td>{grupo_txt}</td><td>{precio_cell}</td><td>{com_txt}</td><td>{obs_txt}</td></tr>"
+            else:
+                html_rows += f"<tr><td><b>{row['Aseguradora']}</b></td><td>{precio_cell}</td><td>{obs_txt}</td></tr>"
 
-            pdf_bytes = crear_pdf(
-                cotizacion_nro=st.session_state.id,
-                cliente=nombre, dni_ruc=dni, celular=celular, email=email,
-                placa=placa, marca=marca_txt, modelo=modelo_txt,
-                uso=uso, clase=clase_display, asientos=asientos, region=depto,
-                fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'),
-                df_resultados=df_visible,
-                observaciones_especiales=obs_pdf,
-                campanas_activas_txt=campanas_txt
+        if es_admin:
+            header = "<th>ASEGURADORA</th><th>GRUPO</th><th>PRECIO</th><th>COMISIÓN</th><th>OBSERVACIONES</th>"
+        else:
+            header = "<th>ASEGURADORA</th><th>PRECIO FINAL</th><th>OBSERVACIONES</th>"
+
+        # Esta es la clase 'resultado-table' que definimos en el CSS anterior
+        st.markdown(f"""
+        <div class='table-container'>
+            <table class='resultado-table'>
+                <thead>
+                    <tr>{header}</tr>
+                </thead>
+                <tbody>
+                    {html_rows}
+                </tbody>
+            </table>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        obs_pdf = " / ".join(df_visible[df_visible['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
+        campanas_list = df_visible[df_visible['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
+        campanas_txt = ", ".join(campanas_list) if campanas_list else ""
+
+        pdf_bytes = crear_pdf(
+            cotizacion_nro=st.session_state.id,
+            cliente=nombre, dni_ruc=dni, celular=celular, email=email,
+            placa=placa, marca=marca_txt, modelo=modelo_txt,
+            uso=uso, clase=clase_display, asientos=asientos, region=depto,
+            fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'),
+            df_resultados=df_visible,
+            observaciones_especiales=obs_pdf,
+            campanas_activas_txt=campanas_txt
+        )
+        
+    # ... (aquí arriba está tu código de pdf_bytes = crear_pdf(...))
+
+        def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
+        nombre_base = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}"
+        st.markdown("""
+    <style>
+    /* Estilo para el botón de PDF (Dorado) */
+    div[data-testid="stDownloadButton"]:nth-of-type(1) button {
+    background-color: #bf8d1b !important;
+    color: white !important;
+    border: 1px solid #bf8d1b !important;
+    }
+
+    /* Estilo para el botón de Imagen (Verde) */
+    div[data-testid="stDownloadButton"]:nth-of-type(2) button {
+    background-color: #089685 !important;
+    color: white !important;
+    border: 1px solid #089685 !important;
+    }
+
+    /* Opcional: efecto hover (cuando pasas el mouse) */
+    div[data-testid="stDownloadButton"] button:hover {
+    opacity: 0.9;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+        # --- NUEVO CÓDIGO DE DESCARGA ---
+        st.success("✅ ¡Cotización calculada y documentos generados con éxito!")
+        
+        # Convertimos los bytes del PDF directamente a bytes de PNG
+        png_bytes = exportar_pdf_a_png(pdf_bytes)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.download_button(
+                label="📄 Descargar PDF", 
+                data=pdf_bytes, 
+                file_name=f"{nombre_base}.pdf", 
+                mime="application/pdf",  
+                use_container_width=True
             )
             
-            def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
-            nombre_archivo = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}.pdf"
-            st.download_button("📄 Descargar PDF", pdf_bytes, nombre_archivo, "application/pdf", type="primary")
-        else:
-            st.error("No hay precios disponibles.")
-
-
-
-
-
-
+        with col2:
+            if png_bytes:
+                st.download_button(
+                    label="🖼️ Descargar Imagen", 
+                    data=png_bytes, 
+                    file_name=f"{nombre_base}.png", 
+                    mime="image/png", 
+                    use_container_width=True
+                )
+            else:
+                st.error("Error al generar PNG")
+        
+    else:
+        st.error("No hay precios disponibles.")          
+# --- PANEL DE ADMINISTRACIÓN (FUERA DEL BOTÓN) ---
+if es_admin:
+    st.markdown("---")
+    mostrar_panel_administrador()
