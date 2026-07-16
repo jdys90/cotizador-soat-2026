@@ -1,8 +1,7 @@
 streamlit
 pandas
 fpdf
-openpyxl
+pdf2image
 gspread
+openpyxl
 pytz
-pip install PyMuPDF
-PyMuPDF
