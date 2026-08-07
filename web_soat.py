@@ -197,7 +197,7 @@ def guardar_historial_local(fecha, hora, cot_id, rol, cliente, dni, celular, ema
     else:
         df_new.to_csv(archivo_csv, mode='a', header=False, index=False, encoding='utf-8-sig')
 
-def crear_lead_o_notificar(cot_id, fecha_hora, rol, cliente, celular, placa, marca, modelo, precio_min, cia_min, dni=""):
+def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca, modelo, precio_min, cia_min, dni=""):
     """
     Intenta inyectar el Lead en Zoho CRM. Si falla, activa el protocolo de emergencia
     enviando el correo clásico y retorna un mensaje amigable.
