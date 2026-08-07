@@ -127,6 +127,7 @@ def mostrar_panel_administrador():
     else:
         st.error(f"No se encontró el archivo en: {ruta_archivo}")
 
+st.warning(f"Llaves detectadas por el servidor: {list(st.secrets.keys())}")
 
 # --- 📧 CONFIGURACIÓN DE CORREO ZOHO ---
 SMTP_SERVER = "smtppro.zoho.com"
