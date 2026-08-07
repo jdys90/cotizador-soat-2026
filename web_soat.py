@@ -198,13 +198,12 @@ def guardar_historial_local(fecha, hora, cot_id, rol, cliente, dni, celular, ema
         df_new.to_csv(archivo_csv, mode='a', header=False, index=False, encoding='utf-8-sig')
 
 def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca, modelo, precio_min, cia_min, dni=""):
-    """
-    Intenta inyectar el Lead en Zoho CRM. Si falla, activa el protocolo de emergencia
-    enviando el correo clásico y retorna un mensaje amigable.
-    """
-    # 1. Intentar inyectar en Zoho CRM
     try:
-        # Renovar el token temporal silenciosamente
+        # Validar si los secretos existen antes de intentar conectar
+        if "ZOHO_REFRESH_TOKEN" not in st.secrets:
+            st.error("❌ Error de configuración: Falta 'ZOHO_REFRESH_TOKEN' en los secretos de Streamlit.")
+            return False, "Error de configuración de secretos."
+
         url_auth = "https://accounts.zoho.com/oauth/v2/token"
         datos_auth = {
             "refresh_token": st.secrets["ZOHO_REFRESH_TOKEN"],
@@ -213,16 +212,18 @@ def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca,
             "grant_type": "refresh_token"
         }
         res_auth = requests.post(url_auth, data=datos_auth)
-        access_token = res_auth.json().get("access_token")
+        res_json = res_auth.json()
+        
+        access_token = res_json.get("access_token")
         
         if not access_token:
-            raise Exception("No se pudo obtener el Access Token de Zoho")
+            # Mostramos el error exacto que devuelve Zoho en la autenticación
+            st.error(f"❌ Error de autenticación Zoho: {res_json}")
+            raise Exception(f"Auth failed: {res_json}")
 
-        # Inyectar el Lead
         url_crm = "https://www.zohoapis.com/crm/v2/Leads"
         headers = {"Authorization": f"Zoho-oauthtoken {access_token}"}
         
-        # Mapeo de campos a Zoho (Last_Name es obligatorio en Zoho Leads)
         payload = {
             "data": [
                 {
@@ -237,19 +238,22 @@ def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca,
         res_crm = requests.post(url_crm, headers=headers, json=payload)
         
         if res_crm.status_code in [200, 201]:
-            # Éxito total. Retorna True para que Streamlit muestre un globo/mensaje de éxito.
+            st.success("¡Lead registrado exitosamente en Zoho CRM!")
             return True, "¡Cotización generada y enviada a un asesor exitosamente!"
         else:
-            raise Exception(f"Fallo en API Zoho CRM: {res_crm.text}")
+            # Mostramos el error exacto que devuelve el CRM
+            st.error(f"❌ Error de respuesta CRM (Código {res_crm.status_code}): {res_crm.text}")
+            raise Exception(f"CRM API error: {res_crm.text}")
 
-    # 2. Sistema de Respaldo (Si Zoho falla, se envía tu correo)
     except Exception as e:
-        print(f"⚠️ Error CRM: {e}. Activando envío de correo de respaldo...")
+        print(f"⚠️ Excepción general capturada: {e}")
         
+        # Protocolo de emergencia (correo)
         try:
             EMAIL_PASSWORD = st.secrets.get("EMAIL_PASSWORD", "")
-            if not EMAIL_PASSWORD or len(EMAIL_PASSWORD) < 5: 
-                return False, "Hubo un problema temporal en el servidor. Por favor, contáctanos por WhatsApp."
+            if not EMAIL_PASSWORD: 
+                st.error("❌ Tampoco hay contraseña de correo en los secretos.")
+                return False, "Error crítico de credenciales."
             
             SMTP_SERVER = "smtppro.zoho.com"
             SMTP_PORT = 587
@@ -257,19 +261,8 @@ def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca,
             EMAIL_RECEIVER = "administracion@yqcorredores.com"
             
             subject = f"🔔 [RESPALDO] Nueva Cotización SOAT: {cliente} ({placa})"
-            body = f"""
-            <h3>Nueva Cotización Generada (Respaldada por fallo de CRM)</h3>
-            <ul>
-                <li><b>ID:</b> {cot_id}</li>
-                <li><b>Fecha:</b> {fecha_hora}</li>
-                <li><b>Rol:</b> {rol}</li>
-                <li><b>Cliente:</b> {cliente}</li>
-                <li><b>DNI:</b> {dni}</li> 
-                <li><b>Celular:</b> {celular}</li>
-                <li><b>Vehículo:</b> {marca} {modelo} ({placa})</li>
-                <li><b>Mejor Oferta:</b> S/ {precio_min} ({cia_min})</li>
-            </ul>
-            """
+            body = f"<h3>Nueva Cotización Generada (Respaldada)</h3><p>Error técnico CRM: {e}</p>"
+            
             msg = MIMEMultipart()
             msg['From'] = EMAIL_SENDER
             msg['To'] = EMAIL_RECEIVER
@@ -282,12 +275,13 @@ def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca,
             server.send_message(msg)
             server.quit()
             
-            # El correo de emergencia salió bien, le mostramos al usuario que todo está en orden.
             return True, "Hemos procesado tu cotización, un asesor te contactará en breve."
             
         except Exception as email_error:
-            print(f"❌ Fallo crítico en CRM y Correo: {email_error}")
+            st.error(f"❌ Fallo crítico absoluto: {email_error}")
             return False, "Experimentamos intermitencias. Por favor, intenta de nuevo en unos minutos."
+
+
 st.set_page_config(page_title="Cotizador SOAT Digital", layout="centered", page_icon="🚗")
 
 @st.cache_resource
