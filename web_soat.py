@@ -6,7 +6,10 @@ import os
 import smtplib
 import gspread
 import pytz # LIBRERÍA PARA ZONA HORARIA
-
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import requests
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -194,42 +197,97 @@ def guardar_historial_local(fecha, hora, cot_id, rol, cliente, dni, celular, ema
     else:
         df_new.to_csv(archivo_csv, mode='a', header=False, index=False, encoding='utf-8-sig')
 
-def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca, modelo, precio_min, cia_min):
-    """Envía correo avisando de nueva cotización."""
+def crear_lead_o_notificar(cot_id, fecha_hora, rol, cliente, celular, placa, marca, modelo, precio_min, cia_min, dni=""):
+    """
+    Intenta inyectar el Lead en Zoho CRM. Si falla, activa el protocolo de emergencia
+    enviando el correo clásico y retorna un mensaje amigable.
+    """
+    # 1. Intentar inyectar en Zoho CRM
     try:
-        # Si la clave está vacía (no se configuraron secretos), no hace nada.
-        if not EMAIL_PASSWORD or len(EMAIL_PASSWORD) < 5: 
-            print("⚠️ No hay contraseña configurada en Secrets. Correo omitido.")
-            return 
+        # Renovar el token temporal silenciosamente
+        url_auth = "https://accounts.zoho.com/oauth/v2/token"
+        datos_auth = {
+            "refresh_token": st.secrets["ZOHO_REFRESH_TOKEN"],
+            "client_id": st.secrets["ZOHO_CLIENT_ID"],
+            "client_secret": st.secrets["ZOHO_CLIENT_SECRET"],
+            "grant_type": "refresh_token"
+        }
+        res_auth = requests.post(url_auth, data=datos_auth)
+        access_token = res_auth.json().get("access_token")
         
-        subject = f"🔔 Nueva Cotización SOAT: {cliente} ({placa})"
-        body = f"""
-        <h3>Nueva Cotización Generada</h3>
-        <ul>
-            <li><b>ID:</b> {cot_id}</li>
-            <li><b>Fecha:</b> {fecha_hora}</li>
-            <li><b>Rol:</b> {rol}</li>
-            <li><b>Cliente:</b> {cliente}</li>
-            <li><b>DNI:</b> {dni}</li> <li><b>Celular:</b> {celular}</li>
-            <li><b>Vehículo:</b> {marca} {modelo} ({placa})</li>
-            <li><b>Mejor Oferta:</b> S/ {precio_min} ({cia_min})</li>
-        </ul>
-        <p>Datos guardados en historial.</p>
-        """
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_SENDER
-        msg['To'] = EMAIL_RECEIVER
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'html'))
-        
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-    except Exception as e:
-        print(f"❌ Error enviando correo: {e}")
+        if not access_token:
+            raise Exception("No se pudo obtener el Access Token de Zoho")
 
+        # Inyectar el Lead
+        url_crm = "https://www.zohoapis.com/crm/v2/Leads"
+        headers = {"Authorization": f"Zoho-oauthtoken {access_token}"}
+        
+        # Mapeo de campos a Zoho (Last_Name es obligatorio en Zoho Leads)
+        payload = {
+            "data": [
+                {
+                    "Last_Name": cliente,
+                    "Mobile": str(celular),
+                    "Lead_Source": "Cotizador SOAT Web",
+                    "Description": f"ID Cotización: {cot_id} | Fecha: {fecha_hora} | Rol: {rol} | DNI: {dni} | Vehículo: {marca} {modelo} ({placa}) | Mejor Oferta: S/ {precio_min} ({cia_min})"
+                }
+            ]
+        }
+        
+        res_crm = requests.post(url_crm, headers=headers, json=payload)
+        
+        if res_crm.status_code in [200, 201]:
+            # Éxito total. Retorna True para que Streamlit muestre un globo/mensaje de éxito.
+            return True, "¡Cotización generada y enviada a un asesor exitosamente!"
+        else:
+            raise Exception(f"Fallo en API Zoho CRM: {res_crm.text}")
+
+    # 2. Sistema de Respaldo (Si Zoho falla, se envía tu correo)
+    except Exception as e:
+        print(f"⚠️ Error CRM: {e}. Activando envío de correo de respaldo...")
+        
+        try:
+            EMAIL_PASSWORD = st.secrets.get("EMAIL_PASSWORD", "")
+            if not EMAIL_PASSWORD or len(EMAIL_PASSWORD) < 5: 
+                return False, "Hubo un problema temporal en el servidor. Por favor, contáctanos por WhatsApp."
+            
+            SMTP_SERVER = "smtppro.zoho.com"
+            SMTP_PORT = 587
+            EMAIL_SENDER = "administracion@yqcorredores.com"
+            EMAIL_RECEIVER = "administracion@yqcorredores.com"
+            
+            subject = f"🔔 [RESPALDO] Nueva Cotización SOAT: {cliente} ({placa})"
+            body = f"""
+            <h3>Nueva Cotización Generada (Respaldada por fallo de CRM)</h3>
+            <ul>
+                <li><b>ID:</b> {cot_id}</li>
+                <li><b>Fecha:</b> {fecha_hora}</li>
+                <li><b>Rol:</b> {rol}</li>
+                <li><b>Cliente:</b> {cliente}</li>
+                <li><b>DNI:</b> {dni}</li> 
+                <li><b>Celular:</b> {celular}</li>
+                <li><b>Vehículo:</b> {marca} {modelo} ({placa})</li>
+                <li><b>Mejor Oferta:</b> S/ {precio_min} ({cia_min})</li>
+            </ul>
+            """
+            msg = MIMEMultipart()
+            msg['From'] = EMAIL_SENDER
+            msg['To'] = EMAIL_RECEIVER
+            msg['Subject'] = subject
+            msg.attach(MIMEText(body, 'html'))
+            
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.starttls()
+            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            server.send_message(msg)
+            server.quit()
+            
+            # El correo de emergencia salió bien, le mostramos al usuario que todo está en orden.
+            return True, "Hemos procesado tu cotización, un asesor te contactará en breve."
+            
+        except Exception as email_error:
+            print(f"❌ Fallo crítico en CRM y Correo: {email_error}")
+            return False, "Experimentamos intermitencias. Por favor, intenta de nuevo en unos minutos."
 st.set_page_config(page_title="Cotizador SOAT Digital", layout="centered", page_icon="🚗")
 
 @st.cache_resource
