@@ -239,7 +239,6 @@ def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca,
         res_crm = requests.post(url_crm, headers=headers, json=payload)
         
         if res_crm.status_code in [200, 201]:
-            st.success("¡Lead registrado exitosamente en Zoho CRM!")
             return True, "¡Cotización generada y enviada a un asesor exitosamente!"
         else:
             # Mostramos el error exacto que devuelve el CRM
