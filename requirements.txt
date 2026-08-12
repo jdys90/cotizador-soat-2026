@@ -6,3 +6,6 @@ gspread
 openpyxl
 pytz
 PyMuPDF
+fastapi
+uvicorn
+pydantic
