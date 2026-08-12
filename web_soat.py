@@ -18,74 +18,7 @@ from logica_cotizador import SoatQuotator
 
 # 👇 AQUÍ ESTÁ LA MAGIA: Importamos ambas funciones desde generador_pdf
 from generador_pdf import crear_pdf, exportar_pdf_a_png 
-# COTIZADOR BOT WHATSAPP
-from fastapi import FastAPI
-from pydantic import BaseModel
 
-app = FastAPI()
-
-# 1. Definimos el modelo exacto de datos que Zoho SalesIQ enviará
-class DatosSOAT(BaseModel):
-    placa: str
-    marca: str
-    modelo: str
-    clase: str
-    uso: str
-    asientos: str
-
-@app.post("/cotizar")
-async def cotizar_soat(datos: DatosSOAT):
-    # ---------------------------------------------------------
-    # ⚙️ CONEXIÓN DE FÓRMULAS
-    # Aquí es donde llamas a tus archivos de GitHub para que 
-    # crucen la clase, uso y devuelvan las tarifas reales.
-    # ---------------------------------------------------------
-    
-    # DATOS SIMULADOS (Reemplaza esto con tu lógica real)
-    # Ejemplo de lo que tu sistema interno debería arrojar:
-    tarifas_calculadas = [
-        {"aseguradora": "Pacífico", "precio": 115.00},
-        {"aseguradora": "Mapfre", "precio": 110.00},
-        {"aseguradora": "La Positiva", "precio": 90.00},
-        {"aseguradora": "Rimac", "precio": 120.00},
-        {"aseguradora": "Interseguro", "precio": 125.00}
-    ]
-
-    # 2. LÓGICA DE ORDENAMIENTO (De más barato a más caro)
-    tarifas_ordenadas = sorted(tarifas_calculadas, key=lambda x: x['precio'])
-
-    # 3. LÓGICA ANTI-BLOQUEO META (Máximo 3 opciones)
-    # Esto evita que WhatsApp colapse por intentar mostrar demasiados botones
-    top_3 = tarifas_ordenadas[:3]
-
-    # 4. PREPARACIÓN DE OPCIONES DINÁMICAS PARA ZOHO
-    opciones_disponibles = []
-    for tarifa in top_3:
-        precio_formateado = f"S/ {tarifa['precio']:.2f}"
-        opciones_disponibles.append({
-            "id": tarifa['aseguradora'], 
-            "text": f"{tarifa['aseguradora']} - {precio_formateado}"
-        })
-    
-    # 5. ESCENARIO "A PRUEBA DE FALLAS" (0 Opciones disponibles)
-    # Por ejemplo, si cotizan un vehículo que ninguna aseguradora cubre.
-    if len(opciones_disponibles) == 0:
-        return {
-            "mensaje": f"⚠️ Para tu {datos.marca} {datos.modelo} ({datos.placa}) necesitamos realizar una cotización manual con nuestros especialistas. Un asesor te atenderá en breve.",
-            "link_legal": "", # Se deja vacío para no enviar el PDF de coberturas
-            "botones_dinamicos": [{"id": "asesor", "text": "🙋‍♂️ Hablar con un asesor"}]
-        }
-
-    # 6. ESCENARIO EXITOSO (1, 2 o 3 opciones listas para vender)
-    return {
-        "mensaje": f"✅ ¡Listo! Tenemos las mejores opciones para tu {datos.marca} {datos.modelo} con placa {datos.placa}:",
-        
-        # Aquí pegas el link de tu diseño en Canva, Web o Google Drive con las coberturas
-        "link_legal": "https://tu-enlace-al-diseno-de-coberturas.com/pdf", 
-        
-        # Esta es la lista que Zoho convertirá automáticamente en botones en WhatsApp
-        "botones_dinamicos": opciones_disponibles
-    }
 # ... (El resto de tu código, como def mostrar_panel_administrador():) ...
 def aplicar_estilos_css():
     st.markdown("""
