@@ -160,9 +160,9 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
     pdf.ln(5)
     pdf.section_title("COBERTURAS")
     coberturas = [
-        ("GASTOS MEDICOS", "S/ 27,500 (5 UIT)", "Atencion medica, hospitalaria y quirurgica."),
-        ("MUERTE / INVALIDEZ", "S/ 22,000 (4 UIT)", "Indemnizacion inmediata a beneficiarios."),
-        ("INCAPACIDAD", "S/ 5,500 (1 UIT)", "Pago diario por descanso medico temporal."),
+        ("GASTOS MEDICOS", "S/ 27,500 (5 UIT)", "Atención médica, hospitalaria y quirúrgica."),
+        ("MUERTE / INVALIDEZ", "S/ 22,000 (4 UIT)", "Indemnización inmediata a beneficiarios."),
+        ("INCAPACIDAD", "S/ 5,500 (1 UIT)", "Pago diario por descanso médico temporal."),
         ("SEPELIO", "S/ 5,500 (1 UIT)", "Reembolso de gastos de funeral.")
     ]
     pdf.set_font('Arial', 'B', 8); pdf.set_text_color(100,100,100)
