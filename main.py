@@ -75,7 +75,7 @@ async def cotizar_soat(datos: DatosSOAT):
         # 5. Escenario exitoso con las mejores opciones
         return {
             "mensaje": f"✅ ¡Listo! Tenemos las mejores opciones para tu {datos.marca} {datos.modelo} con placa {datos.placa}:",
-            "link_legal": "https://tu-enlace-al-diseno-de-coberturas.com/pdf",
+            "link_legal": "https://acrobat.adobe.com/id/urn:aaid:sc:US:5b9c83f9-6972-4a86-aeb4-795f74c62d5a",
             "botones_dinamicos": opciones_disponibles
         }
 
