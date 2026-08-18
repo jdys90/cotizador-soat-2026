@@ -5,7 +5,7 @@ from logica_cotizador import SoatQuotator
 
 app = FastAPI()
 
-# Inicializamos el motor de cotización al arrancar el servidor en Render
+# Inicializamos el motor
 motor = SoatQuotator()
 try:
     motor.cargar_datos('rimac.xlsx', 'positiva.xlsx', 'pacifico.xlsx', 'protecta.xlsx', 'mapfre.xlsx')
@@ -15,7 +15,6 @@ try:
 except Exception as e:
     print(f"❌ Error al inicializar el motor en la API: {e}")
 
-# Definimos el modelo de datos que enviará Zoho SalesIQ
 class DatosSOAT(BaseModel):
     placa: str
     marca: str
@@ -28,11 +27,9 @@ class DatosSOAT(BaseModel):
 @app.post("/cotizar")
 async def cotizar_soat(datos: DatosSOAT):
     try:
-        # 1. Primero limpiamos los datos recibidos de Zoho
         departamento_limpio = datos.departamento.upper().strip()
         uso_limpio = datos.uso.upper().strip()
 
-        # 2. Luego ejecutamos el motor inyectando las variables limpias
         df = motor.cotizar(
             departamento=departamento_limpio,
             uso=uso_limpio,
@@ -54,27 +51,21 @@ async def cotizar_soat(datos: DatosSOAT):
                             "precio": float(row['Precio_Num'])
                         })
 
-        # 1. Ordenamos de más barato a más caro
         tarifas_ordenadas = sorted(tarifas_calculadas, key=lambda x: x['precio'])
-
-        # 2. Filtro anti-bloqueo Meta (Máximo Top 3 opciones)
         top_3 = tarifas_ordenadas[:3]
 
-        # 3. Preparamos las opciones dinámicas para Zoho (Formato Lista de Cadenas Simple)
         opciones_disponibles = []
         for tarifa in top_3:
             precio_formateado = f"S/ {tarifa['precio']:.2f}"
             opciones_disponibles.append(f"{tarifa['aseguradora']} - {precio_formateado}")
 
-        # 4. Escenario a prueba de fallas (0 opciones)
         if len(opciones_disponibles) == 0:
             return {
-                "mensaje": f"⚠️ Para tu {datos.marca} {datos.modelo} ({datos.placa}) necesitamos realizar una cotización manual con nuestros especialistas.",
+                "mensaje": f"⚠️ Para tu {datos.marca} {datos.modelo} ({datos.placa}) necesitamos realizar una cotización manual.",
                 "link": "",
                 "botones": ["🙋‍♂️ Hablar con un asesor"]
             }
 
-        # 5. Escenario exitoso con las mejores opciones
         return {
             "mensaje": f"✅ ¡Listo! Tenemos las mejores opciones para tu {datos.marca} {datos.modelo} con placa {datos.placa}:",
             "link": "https://acrobat.adobe.com/id/urn:aaid:sc:US:5b9c83f9-6972-4a86-aeb4-795f74c62d5a",
@@ -83,11 +74,7 @@ async def cotizar_soat(datos: DatosSOAT):
 
     except Exception as e:
         return {
-            "mensaje": f"⚠️ Ocurrió un error interno al procesar la cotización: {str(e)}",
+            "mensaje": f"⚠️ Error al procesar: {str(e)}",
             "link": "",
             "botones": ["🙋‍♂️ Hablar con un asesor"]
-        }
-            "mensaje": f"⚠️ Ocurrió un error interno al procesar la cotización: {str(e)}",
-            "link_legal": "",
-            "botones_dinamicos": [{"id": "asesor", "text": "🙋‍♂️ Hablar con un asesor"}]
         }
