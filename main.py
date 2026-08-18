@@ -28,17 +28,20 @@ class DatosSOAT(BaseModel):
 @app.post("/cotizar")
 async def cotizar_soat(datos: DatosSOAT):
     try:
-        # Ejecutamos tu motor real usando los datos que mandó el bot de WhatsApp
-        df = motor.cotizar(departamento_limpio = datos.departamento.upper().strip() # Convierte "Lima" en "LIMA"
-            uso_limpio = datos.uso.upper().strip()
-            departamento="LIMA", 
-            uso=datos.uso, 
-            clase=datos.clase, 
-            asientos=int(datos.asientos), 
-            marca=datos.marca, 
+        # 1. Primero limpiamos los datos recibidos de Zoho
+        departamento_limpio = datos.departamento.upper().strip()
+        uso_limpio = datos.uso.upper().strip()
+
+        # 2. Luego ejecutamos el motor inyectando las variables limpias
+        df = motor.cotizar(
+            departamento=departamento_limpio, # Usamos la variable limpia aquí
+            uso=uso_limpio,                   # Usamos la variable limpia aquí
+            clase=datos.clase,
+            asientos=int(datos.asientos),
+            marca=datos.marca,
             modelo=datos.modelo
         )
-        
+                
         tarifas_calculadas = []
         if df is not None and not df.empty:
             df_valid = df[df['Precio'] != "Consultar"].copy()
