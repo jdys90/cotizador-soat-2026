@@ -29,7 +29,8 @@ class DatosSOAT(BaseModel):
 async def cotizar_soat(datos: DatosSOAT):
     try:
         # Ejecutamos tu motor real usando los datos que mandó el bot de WhatsApp
-        df = motor.cotizar(
+        df = motor.cotizar(departamento_limpio = datos.departamento.upper().strip() # Convierte "Lima" en "LIMA"
+            uso_limpio = datos.uso.upper().strip()
             departamento="LIMA", 
             uso=datos.uso, 
             clase=datos.clase, 
