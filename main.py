@@ -34,14 +34,14 @@ async def cotizar_soat(datos: DatosSOAT):
 
         # 2. Luego ejecutamos el motor inyectando las variables limpias
         df = motor.cotizar(
-            departamento=departamento_limpio, # Usamos la variable limpia aquí
-            uso=uso_limpio,                   # Usamos la variable limpia aquí
+            departamento=departamento_limpio,
+            uso=uso_limpio,
             clase=datos.clase,
             asientos=int(datos.asientos),
             marca=datos.marca,
             modelo=datos.modelo
         )
-                
+            
         tarifas_calculadas = []
         if df is not None and not df.empty:
             df_valid = df[df['Precio'] != "Consultar"].copy()
@@ -60,32 +60,33 @@ async def cotizar_soat(datos: DatosSOAT):
         # 2. Filtro anti-bloqueo Meta (Máximo Top 3 opciones)
         top_3 = tarifas_ordenadas[:3]
 
-        # 3. Preparamos las opciones dinámicas para Zoho
+        # 3. Preparamos las opciones dinámicas para Zoho (Formato Lista de Cadenas Simple)
         opciones_disponibles = []
         for tarifa in top_3:
             precio_formateado = f"S/ {tarifa['precio']:.2f}"
-            opciones_disponibles.append({
-                "id": tarifa['aseguradora'], 
-                "text": f"{tarifa['aseguradora']} - {precio_formateado}"
-            })
+            opciones_disponibles.append(f"{tarifa['aseguradora']} - {precio_formateado}")
 
         # 4. Escenario a prueba de fallas (0 opciones)
         if len(opciones_disponibles) == 0:
             return {
                 "mensaje": f"⚠️ Para tu {datos.marca} {datos.modelo} ({datos.placa}) necesitamos realizar una cotización manual con nuestros especialistas.",
-                "link_legal": "",
-                "botones_dinamicos": [{"id": "asesor", "text": "🙋‍♂️ Hablar con un asesor"}]
+                "link": "",
+                "botones": ["🙋‍♂️ Hablar con un asesor"]
             }
 
         # 5. Escenario exitoso con las mejores opciones
         return {
             "mensaje": f"✅ ¡Listo! Tenemos las mejores opciones para tu {datos.marca} {datos.modelo} con placa {datos.placa}:",
-            "link_legal": "https://acrobat.adobe.com/id/urn:aaid:sc:US:5b9c83f9-6972-4a86-aeb4-795f74c62d5a",
-            "botones_dinamicos": opciones_disponibles
+            "link": "https://acrobat.adobe.com/id/urn:aaid:sc:US:5b9c83f9-6972-4a86-aeb4-795f74c62d5a",
+            "botones": opciones_disponibles
         }
 
     except Exception as e:
         return {
+            "mensaje": f"⚠️ Ocurrió un error interno al procesar la cotización: {str(e)}",
+            "link": "",
+            "botones": ["🙋‍♂️ Hablar con un asesor"]
+        }
             "mensaje": f"⚠️ Ocurrió un error interno al procesar la cotización: {str(e)}",
             "link_legal": "",
             "botones_dinamicos": [{"id": "asesor", "text": "🙋‍♂️ Hablar con un asesor"}]
