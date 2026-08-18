@@ -23,6 +23,7 @@ class DatosSOAT(BaseModel):
     clase: str
     uso: str
     asientos: str
+    departamento: str
 
 @app.post("/cotizar")
 async def cotizar_soat(datos: DatosSOAT):
