@@ -133,7 +133,7 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
             pdf.set_draw_color(*GRIS)
             pdf.line(x_price + 7, y_price + 7.5, x_price + 9 + w_old, y_price + 7.5)
             
-            pdf.set_font('Arial', 'B', 14); pdf.set_text_color(*ROJO)
+            pdf.set_font('Arial', 'B', 14); pdf.set_text_color(*AZUL)
             pdf.text(x_price + 12 + w_old, y_price + 9, f"S/ {precio_actual:.2f}")
         else:
             pdf.set_font('Arial', 'B', 14); pdf.set_text_color(*NEGRO)
@@ -158,7 +158,7 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
 
     # --- 3. COBERTURAS ---
     pdf.ln(5)
-    pdf.section_title("COBERTURAS")
+    pdf.section_title("COBERTURAS PRINCIPALES")
     coberturas = [
         ("GASTOS MEDICOS", "S/ 27,500 (5 UIT)", "Atención médica, hospitalaria y quirúrgica."),
         ("MUERTE / INVALIDEZ", "S/ 22,000 (4 UIT)", "Indemnización inmediata a beneficiarios."),
@@ -180,10 +180,10 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
     pdf.ln(8)
     pdf.set_text_color(120, 120, 120) 
     pdf.set_font('Arial', '', 8)
-    
+    pdf.cell(0, 4, "Las coberturas principales aplican para todas las compañías.", 0, 1, 'L')
     pdf.cell(0, 4, "Precios incluyen IGV.", 0, 1, 'L')
     pdf.cell(0, 4, "Vigencia de la cotización: 24 horas.", 0, 1, 'L')
-    pdf.cell(0, 4, "*La cobertura inicia inmediatamente después de la emisión y pago; o de acuerdo a la fecha futura indica.", 0, 1, 'L')
+    pdf.cell(0, 4, "La cobertura inicia inmediatamente después de la emisión y pago, salvo que solicite la emisión con una fecha futura.", 0, 1, 'L')
     
     if campanas_activas_txt:
         pdf.set_font('Arial', 'B', 8)
