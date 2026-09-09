@@ -302,9 +302,11 @@ except Exception as e:
     carga_exitosa = False
     lista_marcas = []
 
-with st.sidebar:
-    if pd.io.common.file_exists("logo.png"): st.image("logo.png")
-    st.info("🔹 BIENVENIDO")
+# --- LOGO CENTRADO ---
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    if os.path.exists("logo_web.png"):
+        st.image("logo_web.png", use_container_width=True)
 
 st.title("COTIZACION SOAT DIGITAL")
 
