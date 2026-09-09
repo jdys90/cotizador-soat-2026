@@ -538,78 +538,77 @@ if st.session_state.res is not None:
         </div>
         """, unsafe_allow_html=True)
         
-        obs_pdf = " / ".join(df_visible[df_visible['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
-        campanas_list = df_visible[df_visible['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
-        campanas_txt = ", ".join(campanas_list) if campanas_list else ""
-
-        pdf_bytes = crear_pdf(
-            cotizacion_nro=st.session_state.id,
-            cliente=nombre, dni_ruc=dni, celular=celular, email=email,
-            placa=placa, marca=marca_txt, modelo=modelo_txt,
-            uso=uso, clase=clase_display, asientos=asientos, region=depto,
-            fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'),
-            df_resultados=df_visible,
-            observaciones_especiales=obs_pdf,
-            campanas_activas_txt=campanas_txt
-        )
+       # (Aquí termina el st.markdown de tu tabla HTML anterior)
         
-    # ... (aquí arriba está tu código de pdf_bytes = crear_pdf(...))
+        # --- NUEVA SECCIÓN: CONFIGURACIÓN DEL PDF E IMAGEN ---
+        st.divider()
+        st.subheader("Configuración del PDF e Imagen")
+        st.write("Desmarca las aseguradoras que **NO** deseas incluir en el documento final:")
 
-        def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
-        nombre_base = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}"
-        st.markdown("""
-    <style>
-    /* Estilo para el botón de PDF (Dorado) */
-    div[data-testid="stDownloadButton"]:nth-of-type(1) button {
-    background-color: #bf8d1b !important;
-    color: white !important;
-    border: 1px solid #bf8d1b !important;
-    }
+        opciones_aseguradoras = df_visible['Aseguradora'].tolist()
+        aseguradoras_seleccionadas = []
 
-    /* Estilo para el botón de Imagen (Verde) */
-    div[data-testid="stDownloadButton"]:nth-of-type(2) button {
-    background-color: #089685 !important;
-    color: white !important;
-    border: 1px solid #089685 !important;
-    }
+        # Crear checkboxes dinámicos
+        for i, aseguradora in enumerate(opciones_aseguradoras):
+            if st.checkbox(f"Incluir {aseguradora}", value=True, key=f"pdf_chk_{st.session_state.id}_{i}"):
+                aseguradoras_seleccionadas.append(aseguradora)
 
-    /* Opcional: efecto hover (cuando pasas el mouse) */
-    div[data-testid="stDownloadButton"] button:hover {
-    opacity: 0.9;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-        # --- NUEVO CÓDIGO DE DESCARGA ---
-        st.success("✅ ¡Cotización calculada y documentos generados con éxito!")
-        
-        # Convertimos los bytes del PDF directamente a bytes de PNG
-        png_bytes = exportar_pdf_a_png(pdf_bytes)
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.download_button(
-                label="📄 Descargar PDF", 
-                data=pdf_bytes, 
-                file_name=f"{nombre_base}.pdf", 
-                mime="application/pdf",  
-                use_container_width=True
-            )
-            
-        with col2:
-            if png_bytes:
-                st.download_button(
-                    label="🖼️ Descargar Imagen", 
-                    data=png_bytes, 
-                    file_name=f"{nombre_base}.png", 
-                    mime="image/png", 
-                    use_container_width=True
-                )
-            else:
-                st.error("Error al generar PNG")
+        if not aseguradoras_seleccionadas:
+            st.warning("⚠️ Debes dejar marcada al menos una aseguradora para generar los documentos.")
+        else:
+            # Filtramos los datos solo con lo seleccionado
+            df_pdf = df_visible[df_visible['Aseguradora'].isin(aseguradoras_seleccionadas)]
+
+            # Botón para accionar la creación del documento
+            if st.button("📄 Generar Documentos Finales", type="primary"):
+                with st.spinner("Generando archivos..."):
+                    obs_pdf = " / ".join(df_pdf[df_pdf['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
+                    campanas_list = df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
+                    campanas_txt = ", ".join(campanas_list) if campanas_list else ""
+
+                    pdf_bytes = crear_pdf(
+                        cotizacion_nro=st.session_state.id,
+                        cliente=nombre, dni_ruc=dni, celular=celular, email=email,
+                        placa=placa, marca=marca_txt, modelo=modelo_txt,
+                        uso=uso, clase=clase_display, asientos=asientos, region=depto,
+                        fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'),
+                        df_resultados=df_pdf,
+                        observaciones_especiales=obs_pdf,
+                        campanas_activas_txt=campanas_txt
+                    )
+                    
+                    def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
+                    nombre_base = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}"
+                    
+                    # Conservamos tus colores de botones
+                    st.markdown("""
+                    <style>
+                    div[data-testid="stDownloadButton"]:nth-of-type(1) button {
+                        background-color: #bf8d1b !important; color: white !important; border: 1px solid #bf8d1b !important;
+                    }
+                    div[data-testid="stDownloadButton"]:nth-of-type(2) button {
+                        background-color: #089685 !important; color: white !important; border: 1px solid #089685 !important;
+                    }
+                    div[data-testid="stDownloadButton"] button:hover { opacity: 0.9; }
+                    </style>
+                    """, unsafe_allow_html=True)
+                    
+                    png_bytes = exportar_pdf_a_png(pdf_bytes)
+                    
+                    st.success("✅ ¡Documentos generados con las aseguradoras seleccionadas!")
+                    
+                    col_pdf, col_img = st.columns(2)
+                    with col_pdf:
+                        st.download_button(label="📄 Descargar PDF", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
+                    with col_img:
+                        if png_bytes:
+                            st.download_button(label="🖼️ Descargar Imagen", data=png_bytes, file_name=f"{nombre_base}.png", mime="image/png", use_container_width=True)
+                        else:
+                            st.error("Error al generar PNG")
         
     else:
-        st.error("No hay precios disponibles.")          
+        st.error("No hay precios disponibles.")
+                
 # --- PANEL DE ADMINISTRACIÓN (FUERA DEL BOTÓN) ---
 if es_admin:
     st.markdown("---")
