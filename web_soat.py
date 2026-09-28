@@ -661,17 +661,17 @@ if st.session_state.res is not None:
                 campanas_activas_txt=campanas_txt
             ) # <-- Fin de la función crear_pdf
                         
-                def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
-                nombre_base = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}"
+            def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
+            nombre_base = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}"
                         
-                png_bytes = exportar_pdf_a_png(pdf_bytes)
-                st.success("✅ ¡Documentos generados!")
+            png_bytes = exportar_pdf_a_png(pdf_bytes)
+            st.success("✅ ¡Documentos generados!")
                         
-                col_pdf, col_img = st.columns(2)
-                with col_pdf:
-                    st.download_button("📄 Descargar PDF", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
-                with col_img:
-                    if png_bytes: st.download_button("🖼️ Descargar Imagen", data=png_bytes, file_name=f"{nombre_base}.png", mime="image/png", use_container_width=True)
+            col_pdf, col_img = st.columns(2)
+            with col_pdf:
+                st.download_button("📄 Descargar PDF", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
+            with col_img:
+                if png_bytes: st.download_button("🖼️ Descargar Imagen", data=png_bytes, file_name=f"{nombre_base}.png", mime="image/png", use_container_width=True)
                         
         else:
             # --- EXPERIENCIA DEL CLIENTE (SIN FRICCION) ---
