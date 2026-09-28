@@ -376,20 +376,27 @@ if carga_exitosa:
         asientos = st.number_input("💺 Asientos", 1, 70, 5)
         
     with c2:
-        marca = st.selectbox("🚘 Marca", ["OTRA MARCA"] + lista_marcas)
+        marca = st.selectbox(
+            "🚘 Marca", 
+            ["OTRA MARCA"] + lista_marcas,
+            help="Haz clic en la caja y empieza a escribir para encontrar tu marca rápidamente."
+        )
+        # Texto de ayuda sutil, ideal para la vista en celulares
+        st.caption("💡 Tip: Haz clic y escribe tu marca para buscar más rápido.")
+        
         if marca == "OTRA MARCA":
-            marca_txt = st.text_input("Ingresa Marca:").upper()
+            marca_txt = st.text_input("Ingresa Marca:", placeholder="Ej: TOYOTA").upper()
             modelo_opts = []
         else:
             marca_txt = marca
             modelo_opts = catalogo.get(marca, [])
         
-        usar_manual = st.checkbox("✍️ Escribir modelo manualmente")
-        if usar_manual:
-            modelo_txt = st.text_input("Escribe el Modelo:", "").upper()
+        mod = st.selectbox("🚙 Modelo", modelo_opts + ["OTRO MODELO"])
+        
+        if mod == "OTRO MODELO" or marca == "OTRA MARCA":
+            modelo_txt = st.text_input("Especificar Modelo:", placeholder="Ej: HILUX").upper()
         else:
-            mod = st.selectbox("🚙 Modelo", modelo_opts + ["OTRO MODELO"])
-            modelo_txt = st.text_input("Especificar Otro:", "").upper() if mod == "OTRO MODELO" else mod
+            modelo_txt = mod
 
     st.markdown("<br>", unsafe_allow_html=True) # Pequeño respiro visual
 
