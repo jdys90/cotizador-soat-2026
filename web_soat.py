@@ -505,7 +505,7 @@ if st.session_state.res is not None:
                 try:
                     p_old = float(row['Precio_Lista']); p_new = float(row['Precio'])
                     if p_new < p_old: 
-                        precio_cell = f"<div><span style='text-decoration:line-through; color:#999; font-size:13px;'>S/ {p_old:.2f}</span><br><span style='color:#d32f2f; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span></div>"
+                        precio_cell = f"<div><span style='text-decoration:line-through; color:#999; font-size:13px;'>S/ {p_old:.2f}</span><br><span style='color:#25D366; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span></div>"
                     else: precio_cell = f"<span style='color:inherit; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span>"
                 except: precio_cell = f"<span style='color:inherit; font-weight:bold; font-size:16px;'>{row['Precio']}</span>"
             else:
@@ -620,11 +620,23 @@ if st.session_state.res is not None:
             with col_acc2:
                 st.download_button("📄 DESCARGAR COTIZACIÓN", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
             
-            # Estilos de botones alineados correctamente al margen izquierdo principal
+            # Estilos de botones alineados y con psicología de color correcta
             st.markdown("""
             <style>
+            /* Botón 1: WhatsApp (Verde Oficial) */
+            div[data-testid="stLinkButton"] a {
+                background-color: #25D366 !important; 
+                color: white !important; 
+                border: 1px solid #25D366 !important;
+                text-decoration: none;
+            }
+            div[data-testid="stLinkButton"] a:hover { opacity: 0.9; }
+
+            /* Botón 2: Descargar PDF (Azul Corporativo o Neutro) */
             div[data-testid="stDownloadButton"] button {
-                background-color: #089685 !important; color: white !important; border: 1px solid #089685 !important;
+                background-color: #0066CC !important; 
+                color: white !important; 
+                border: 1px solid #0066CC !important;
             }
             div[data-testid="stDownloadButton"] button:hover { opacity: 0.9; }
             </style>
