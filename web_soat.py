@@ -54,14 +54,20 @@ def aplicar_estilos_css():
             color: var(--text-main) !important;
         }
         
-        /* Botón de acción principal */
-        .stButton>button {
-            background-color: var(--accent-color) !important;
+       /* Botón de acción principal (Generar Cotización) */
+        div[data-testid="stButton"] button {
+            background-color: #004aad !important; /* Azul corporativo oscuro */
             color: white !important;
-            border-radius: 5px;
-                /* Opcional: efecto hover (cuando pasas el mouse) */
-    div[data-testid="stButton>button"] button:hover {
-        opacity: 0.9;
+            border: 1px solid #004aad !important;
+            padding: 0.75rem 2rem !important; /* Botón más alto y robusto */
+            font-size: 18px !important;
+            font-weight: bold !important;
+            border-radius: 8px !important;
+        }
+        div[data-testid="stButton"] button:hover {
+            opacity: 0.85 !important;
+            border-color: #004aad !important;
+            color: white !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -385,18 +391,21 @@ if carga_exitosa:
             mod = st.selectbox("🚙 Modelo", modelo_opts + ["OTRO MODELO"])
             modelo_txt = st.text_input("Especificar Otro:", "").upper() if mod == "OTRO MODELO" else mod
 
-    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True) # Pequeño respiro visual
 
-    # --- 3. CODIGO ADMIN ---
-    col_code, col_btn = st.columns([1, 1])
-    with col_code:
-        codigo_admin = st.text_input("Código de Descuento (Opcional)", type="password", placeholder="Si tienes uno, ingrésalo aquí")
+    # --- 3. BOTÓN PRINCIPAL (PROTAGONISTA) ---
+    btn_generar = st.button("🔍 GENERAR COTIZACIÓN", use_container_width=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True) # Separador antes del admin
+    
+    # --- 4. ACCESO CORREDOR (DISCRETO) ---
+    # Lo metemos en un expander (acordeón) para que no distraiga al cliente
+    with st.expander("🛡️ Acceso Corredor (Solo Administradores)"):
+        codigo_admin = st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave")
     
     es_admin = (codigo_admin == "ADMIN2026")
 
     if es_admin:
-        # Llama a la función AQUÍ para que aparezca la tabla
-    
         if st.button("📥 DESCARGAR HISTORIAL (Google Sheets)"):
             df_historial = descargar_historial_google()
             if not df_historial.empty:
@@ -408,7 +417,8 @@ if carga_exitosa:
     if 'res' not in st.session_state: st.session_state.res = None
     if 'id' not in st.session_state: st.session_state.id = None
 
-    if col_btn.button("🔍 GENERAR COTIZACIÓN", use_container_width=True):
+    # Cambiamos col_btn.button por nuestra nueva variable btn_generar
+    if btn_generar:
         errores = []
         if not nombre: errores.append("Falta el Nombre.")
         if not dni or not dni.isdigit(): errores.append("Ingrese un DNI/RUC válido.")
