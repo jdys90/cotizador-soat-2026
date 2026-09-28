@@ -315,7 +315,19 @@ with col2:
         st.image("logo_web.png", use_container_width=True)
 
 st.title("COTIZACION SOAT DIGITAL")
+# --- ACCESO CORREDOR (OCULTO EN BARRA LATERAL) ---
+with st.sidebar.expander("🛡️ Acceso Corredor"):
+    codigo_admin = st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave")
+    
+es_admin = (codigo_admin == "ADMIN2026")
 
+if es_admin:
+    st.sidebar.success("Modo Corredor Activado")
+    if st.sidebar.button("📥 DESCARGAR HISTORIAL"):
+        df_historial = descargar_historial_google()
+        if not df_historial.empty:
+            csv = df_historial.to_csv(index=False).encode('utf-8-sig')
+            st.sidebar.download_button("💾 Guardar CSV", csv, f"Historial_{datetime.datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
 if carga_exitosa:
     # --- 1. DATOS DEL CLIENTE ---
     st.subheader("1. Datos del Cliente")
@@ -405,21 +417,7 @@ if carga_exitosa:
     
     st.markdown("<br>", unsafe_allow_html=True) # Separador antes del admin
     
-    # --- 4. ACCESO CORREDOR (DISCRETO) ---
-    # Lo metemos en un expander (acordeón) para que no distraiga al cliente
-    with st.expander("🛡️ Acceso Corredor (Solo Administradores)"):
-        codigo_admin = st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave")
-    
-    es_admin = (codigo_admin == "ADMIN2026")
-
-    if es_admin:
-        if st.button("📥 DESCARGAR HISTORIAL (Google Sheets)"):
-            df_historial = descargar_historial_google()
-            if not df_historial.empty:
-                csv = df_historial.to_csv(index=False).encode('utf-8-sig')
-                st.download_button("💾 Clic para guardar CSV", csv, f"Historial_{datetime.datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
-            else:
-                st.warning("No se pudo conectar a Google Sheets o la hoja está vacía.")
+   
 
     if 'res' not in st.session_state: st.session_state.res = None
     if 'id' not in st.session_state: st.session_state.id = None
