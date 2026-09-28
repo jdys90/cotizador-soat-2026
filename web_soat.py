@@ -599,8 +599,8 @@ if st.session_state.res is not None:
                         campanas_list = df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
                         campanas_txt = ", ".join(campanas_list) if campanas_list else ""
 
-                        pdf_bytes = crear_pdf(
-                           # 1. Definimos qué mostrar en el PDF dependiendo de si hay datos
+                       
+            # 1. Definimos qué mostrar en el PDF dependiendo de si hay datos
             dni_pdf = dni if dni else "Por confirmar"
             
             # Si es admin, mostramos la fecha real; si es cliente público, mostramos un texto
