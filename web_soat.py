@@ -492,7 +492,7 @@ if st.session_state.res is not None:
     df_visible = st.session_state.df_editable
 
     if not df_visible.empty:
-        st.success(f"Cotización N° {st.session_state.id}")
+        st.success(f"✅ ¡Cotización exitosa! Aquí tienes las mejores opciones para tu vehículo (Ref: {st.session_state.id})")
         if es_admin: 
             st.info("🔓 MODO CORREDOR ACTIVADO - Ajusta los precios u observaciones antes de generar el PDF:")
         # 2. INYECTAMOS EL EDITOR DE DATOS SOLO PARA EL ADMIN
