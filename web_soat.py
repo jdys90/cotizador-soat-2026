@@ -574,7 +574,7 @@ if st.session_state.res is not None:
         
        # (Aquí termina el st.markdown de tu tabla HTML anterior)
         
-        # --- NUEVA SECCIÓN: UX OPTIMIZADA (ADMIN VS CLIENTE) ---
+      # --- NUEVA SECCIÓN: UX OPTIMIZADA (ADMIN VS CLIENTE) ---
         st.divider()
         
         if es_admin:
@@ -593,7 +593,7 @@ if st.session_state.res is not None:
             else:
                 df_pdf = df_visible[df_visible['Aseguradora'].isin(aseguradoras_seleccionadas)]
 
-               if st.button("📄 Generar Documentos Finales", type="primary"):
+                if st.button("📄 Generar Documentos Finales", type="primary"):
                     with st.spinner("Generando archivos..."):
                         obs_pdf = " / ".join(df_pdf[df_pdf['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
                         campanas_list = df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
@@ -634,7 +634,6 @@ if st.session_state.res is not None:
                             st.download_button("📄 Descargar PDF", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
                         with col_img:
                             if png_bytes: st.download_button("🖼️ Descargar Imagen", data=png_bytes, file_name=f"{nombre_base}.png", mime="image/png", use_container_width=True)
-
                        
             # 1. Definimos qué mostrar en el PDF dependiendo de si hay datos
             dni_pdf = dni if dni else "Por confirmar"
