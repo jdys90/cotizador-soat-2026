@@ -613,38 +613,22 @@ if st.session_state.res is not None:
             mensaje_wa = f"Hola YQ, acabo de cotizar mi SOAT en su web para la placa {placa}. Me interesa la opción de {mejor_cia} por S/ {mejor_precio}. ¿Me ayudan a emitirlo?"
             link_wa = f"https://wa.me/51957331099?text={mensaje_wa.replace(' ', '%20')}"
 
-            # Mostramos los dos botones clave
+            # Mostramos los dos botones clave alineados
             col_acc1, col_acc2 = st.columns(2)
             with col_acc1:
                 st.link_button("📲 CONTRATAR VÍA WHATSAPP", link_wa, type="primary", use_container_width=True)
             with col_acc2:
-                st.download_button("📄 DESCARGAR COTIZACIÓN (PDF)", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
-                    # Conservamos tus colores de botones
-                    st.markdown("""
-                    <style>
-                    div[data-testid="stDownloadButton"]:nth-of-type(1) button {
-                        background-color: #bf8d1b !important; color: white !important; border: 1px solid #bf8d1b !important;
-                    }
-                    div[data-testid="stDownloadButton"]:nth-of-type(2) button {
-                        background-color: #089685 !important; color: white !important; border: 1px solid #089685 !important;
-                    }
-                    div[data-testid="stDownloadButton"] button:hover { opacity: 0.9; }
-                    </style>
-                    """, unsafe_allow_html=True)
-                    
-                    png_bytes = exportar_pdf_a_png(pdf_bytes)
-                    
-                    st.success("✅ ¡Documentos generados con las aseguradoras seleccionadas!")
-                    
-                    col_pdf, col_img = st.columns(2)
-                    with col_pdf:
-                        st.download_button(label="📄 Descargar PDF", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
-                    with col_img:
-                        if png_bytes:
-                            st.download_button(label="🖼️ Descargar Imagen", data=png_bytes, file_name=f"{nombre_base}.png", mime="image/png", use_container_width=True)
-                        else:
-                            st.error("Error al generar PNG")
-        
+                st.download_button("📄 DESCARGAR COTIZACIÓN", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
+            
+            # Estilos de botones alineados correctamente al margen izquierdo principal
+            st.markdown("""
+            <style>
+            div[data-testid="stDownloadButton"] button {
+                background-color: #089685 !important; color: white !important; border: 1px solid #089685 !important;
+            }
+            div[data-testid="stDownloadButton"] button:hover { opacity: 0.9; }
+            </style>
+            """, unsafe_allow_html=True)
     else:
         st.error("No hay precios disponibles.")
                 
