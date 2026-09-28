@@ -611,7 +611,7 @@ if st.session_state.res is not None:
             
             # Creamos el botón nativo de WhatsApp
             mensaje_wa = f"Hola YQ, acabo de cotizar mi SOAT en su web para la placa {placa}. Me interesa la opción de {mejor_cia} por S/ {mejor_precio}. ¿Me ayudan a emitirlo?"
-            link_wa = f"https://wa.me/51957331099?text={mensaje_wa.replace(' ', '%20')}"
+            link_wa = f"https://wa.me/51906462225?text={mensaje_wa.replace(' ', '%20')}"
 
             # Mostramos los dos botones clave alineados
             col_acc1, col_acc2 = st.columns(2)
