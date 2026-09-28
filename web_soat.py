@@ -712,10 +712,10 @@ if st.session_state.res is not None:
             mejor_precio = df_pdf.iloc[0]['Precio'] if not df_pdf.empty else ""
             mejor_cia = df_pdf.iloc[0]['Aseguradora'] if not df_pdf.empty else ""
             
-           # Creamos el mensaje dinámico
+            # Creamos el mensaje dinámico
             mensaje_wa = f"Hola YQ, acabo de cotizar mi SOAT en su web para la placa {placa}. Me interesa la opción de {mejor_cia} por S/ {mejor_precio}."
             
-            # NUEVO: Apuntamos a tu página de gracias, llevando el mensaje "a cuestas" en la URL
+            # Apuntamos a tu página de gracias, llevando el mensaje "a cuestas" en la URL
             link_gracias = f"https://yqcorredores.com/gracias-soat/?msg={mensaje_wa.replace(' ', '%20')}"
 
             # El botón ahora dispara la página de gracias
