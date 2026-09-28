@@ -645,12 +645,28 @@ if st.session_state.res is not None:
             campanas_list = df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
             campanas_txt = ", ".join(campanas_list) if campanas_list else ""
             
-            # Generamos el PDF automáticamente sin que el cliente presione nada extra
+            # 1. Definimos qué mostrar en el PDF
+            dni_pdf = dni if dni else "Por confirmar"
+            venc_pdf = fecha_venc.strftime('%d/%m/%Y') if es_admin else "Por confirmar"
+
+            # 2. Generamos el PDF automáticamente sin que el cliente presione nada extra
             pdf_bytes = crear_pdf(
-                cotizacion_nro=st.session_state.id, cliente=nombre, dni_ruc=dni, celular=celular, email=email,
-                placa=placa, marca=marca_txt, modelo=modelo_txt, uso=uso, clase=clase_display, asientos=asientos, region=depto,
-                fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'), df_resultados=df_pdf,
-                observaciones_especiales=obs_pdf, campanas_activas_txt=campanas_txt
+                cotizacion_nro=st.session_state.id, 
+                cliente=nombre, 
+                dni_ruc=dni_pdf, 
+                celular=celular, 
+                email=email,
+                placa=placa, 
+                marca=marca_txt, 
+                modelo=modelo_txt, 
+                uso=uso, 
+                clase=clase_display, 
+                asientos=asientos, 
+                region=depto,
+                fecha_vencimiento=venc_pdf, 
+                df_resultados=df_pdf,
+                observaciones_especiales=obs_pdf, 
+                campanas_activas_txt=campanas_txt
             )
             
             def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
