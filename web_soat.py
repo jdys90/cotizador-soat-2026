@@ -593,7 +593,7 @@ if st.session_state.res is not None:
             else:
                 df_pdf = df_visible[df_visible['Aseguradora'].isin(aseguradoras_seleccionadas)]
 
-                if st.button("📄 Generar Documentos Finales", type="primary"):
+               if st.button("📄 Generar Documentos Finales", type="primary"):
                     with st.spinner("Generando archivos..."):
                         obs_pdf = " / ".join(df_pdf[df_pdf['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
                         campanas_list = df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
