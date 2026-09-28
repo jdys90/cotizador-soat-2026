@@ -427,6 +427,9 @@ if carga_exitosa:
                 peru_tz = pytz.timezone('America/Lima')
                 now = datetime.datetime.now(peru_tz) # <-- AQUÍ ESTÁ EL CAMBIO CLAVE
                 df = app.cotizar(depto, uso, clase_interna, asientos, marca_txt, modelo_txt)
+                # 2. FILTRO MAESTRO: Si es cliente, ocultamos La Positiva
+                if not es_admin and not df.empty:
+                    df = df[df['Aseguradora'] != 'La Positiva']
                 st.session_state.res = df
                 st.session_state.id = f"2000-{datetime.datetime.now().strftime('%m%d-%H%M')}"
                 
@@ -540,46 +543,82 @@ if st.session_state.res is not None:
         
        # (Aquí termina el st.markdown de tu tabla HTML anterior)
         
-        # --- NUEVA SECCIÓN: CONFIGURACIÓN DEL PDF E IMAGEN ---
+        # --- NUEVA SECCIÓN: UX OPTIMIZADA (ADMIN VS CLIENTE) ---
         st.divider()
-        st.subheader("Configuración del PDF e Imagen")
-        st.write("Desmarca las aseguradoras que **NO** deseas incluir en el documento final:")
+        
+        if es_admin:
+            st.subheader("Configuración del PDF e Imagen (Modo Admin)")
+            st.write("Desmarca las aseguradoras que **NO** deseas incluir en el documento final:")
 
-        opciones_aseguradoras = df_visible['Aseguradora'].tolist()
-        aseguradoras_seleccionadas = []
+            opciones_aseguradoras = df_visible['Aseguradora'].tolist()
+            aseguradoras_seleccionadas = []
 
-        # Crear checkboxes dinámicos
-        for i, aseguradora in enumerate(opciones_aseguradoras):
-            if st.checkbox(f"Incluir {aseguradora}", value=True, key=f"pdf_chk_{st.session_state.id}_{i}"):
-                aseguradoras_seleccionadas.append(aseguradora)
+            for i, aseguradora in enumerate(opciones_aseguradoras):
+                if st.checkbox(f"Incluir {aseguradora}", value=True, key=f"pdf_chk_{st.session_state.id}_{i}"):
+                    aseguradoras_seleccionadas.append(aseguradora)
 
-        if not aseguradoras_seleccionadas:
-            st.warning("⚠️ Debes dejar marcada al menos una aseguradora para generar los documentos.")
+            if not aseguradoras_seleccionadas:
+                st.warning("⚠️ Debes dejar marcada al menos una aseguradora para generar los documentos.")
+            else:
+                df_pdf = df_visible[df_visible['Aseguradora'].isin(aseguradoras_seleccionadas)]
+
+                if st.button("📄 Generar Documentos Finales", type="primary"):
+                    with st.spinner("Generando archivos..."):
+                        obs_pdf = " / ".join(df_pdf[df_pdf['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
+                        campanas_list = df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
+                        campanas_txt = ", ".join(campanas_list) if campanas_list else ""
+
+                        pdf_bytes = crear_pdf(
+                            cotizacion_nro=st.session_state.id, cliente=nombre, dni_ruc=dni, celular=celular, email=email,
+                            placa=placa, marca=marca_txt, modelo=modelo_txt, uso=uso, clase=clase_display, asientos=asientos, region=depto,
+                            fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'), df_resultados=df_pdf,
+                            observaciones_especiales=obs_pdf, campanas_activas_txt=campanas_txt
+                        )
+                        
+                        def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
+                        nombre_base = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}"
+                        
+                        png_bytes = exportar_pdf_a_png(pdf_bytes)
+                        st.success("✅ ¡Documentos generados!")
+                        
+                        col_pdf, col_img = st.columns(2)
+                        with col_pdf:
+                            st.download_button("📄 Descargar PDF", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
+                        with col_img:
+                            if png_bytes: st.download_button("🖼️ Descargar Imagen", data=png_bytes, file_name=f"{nombre_base}.png", mime="image/png", use_container_width=True)
+        
         else:
-            # Filtramos los datos solo con lo seleccionado
-            df_pdf = df_visible[df_visible['Aseguradora'].isin(aseguradoras_seleccionadas)]
+            # --- EXPERIENCIA DEL CLIENTE (SIN FRICCION) ---
+            df_pdf = df_visible 
+            obs_pdf = " / ".join(df_pdf[df_pdf['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
+            campanas_list = df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
+            campanas_txt = ", ".join(campanas_list) if campanas_list else ""
+            
+            # Generamos el PDF automáticamente sin que el cliente presione nada extra
+            pdf_bytes = crear_pdf(
+                cotizacion_nro=st.session_state.id, cliente=nombre, dni_ruc=dni, celular=celular, email=email,
+                placa=placa, marca=marca_txt, modelo=modelo_txt, uso=uso, clase=clase_display, asientos=asientos, region=depto,
+                fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'), df_resultados=df_pdf,
+                observaciones_especiales=obs_pdf, campanas_activas_txt=campanas_txt
+            )
+            
+            def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
+            nombre_base = f"COTISOAT_Oficial_{limpiar_txt(placa)}"
+            
+            # Buscamos la mejor opción para pre-armar el mensaje de WhatsApp
+            mejor_precio = df_pdf.iloc[0]['Precio'] if not df_pdf.empty else ""
+            mejor_cia = df_pdf.iloc[0]['Aseguradora'] if not df_pdf.empty else ""
+            
+            # Creamos el botón nativo de WhatsApp
+            mensaje_wa = f"Hola YQ, acabo de cotizar mi SOAT en su web para la placa {placa}. Me interesa la opción de {mejor_cia} por S/ {mejor_precio}. ¿Me ayudan a emitirlo?"
+            link_wa = f"https://wa.me/51957331099?text={mensaje_wa.replace(' ', '%20')}"
 
-            # Botón para accionar la creación del documento
-            if st.button("📄 Generar Documentos Finales", type="primary"):
-                with st.spinner("Generando archivos..."):
-                    obs_pdf = " / ".join(df_pdf[df_pdf['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
-                    campanas_list = df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
-                    campanas_txt = ", ".join(campanas_list) if campanas_list else ""
-
-                    pdf_bytes = crear_pdf(
-                        cotizacion_nro=st.session_state.id,
-                        cliente=nombre, dni_ruc=dni, celular=celular, email=email,
-                        placa=placa, marca=marca_txt, modelo=modelo_txt,
-                        uso=uso, clase=clase_display, asientos=asientos, region=depto,
-                        fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'),
-                        df_resultados=df_pdf,
-                        observaciones_especiales=obs_pdf,
-                        campanas_activas_txt=campanas_txt
-                    )
-                    
-                    def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
-                    nombre_base = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}"
-                    
+            # Mostramos los dos botones clave
+            col_acc1, col_acc2 = st.columns(2)
+            with col_acc1:
+                st.link_button("📲 CONTRATAR VÍA WHATSAPP", link_wa, type="primary", use_container_width=True)
+            with col_acc2:
+                st.download_button("📄 DESCARGAR COTIZACIÓN (PDF)", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
                     # Conservamos tus colores de botones
                     st.markdown("""
                     <style>
