@@ -600,11 +600,31 @@ if st.session_state.res is not None:
                         campanas_txt = ", ".join(campanas_list) if campanas_list else ""
 
                         pdf_bytes = crear_pdf(
-                            cotizacion_nro=st.session_state.id, cliente=nombre, dni_ruc=dni, celular=celular, email=email,
-                            placa=placa, marca=marca_txt, modelo=modelo_txt, uso=uso, clase=clase_display, asientos=asientos, region=depto,
-                            fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'), df_resultados=df_pdf,
-                            observaciones_especiales=obs_pdf, campanas_activas_txt=campanas_txt
-                        )
+                           # 1. Definimos qué mostrar en el PDF dependiendo de si hay datos
+            dni_pdf = dni if dni else "Por confirmar"
+            
+            # Si es admin, mostramos la fecha real; si es cliente público, mostramos un texto
+            venc_pdf = fecha_venc.strftime('%d/%m/%Y') if es_admin else "Por confirmar"
+
+            # 2. Pasamos estas nuevas variables al creador del PDF
+            pdf_bytes = crear_pdf(
+                cotizacion_nro=st.session_state.id, 
+                cliente=nombre, 
+                dni_ruc=dni_pdf,          # <-- VARIABLE ACTUALIZADA
+                celular=celular, 
+                email=email,
+                placa=placa, 
+                marca=marca_txt, 
+                modelo=modelo_txt, 
+                uso=uso, 
+                clase=clase_display, 
+                asientos=asientos, 
+                region=depto,
+                fecha_vencimiento=venc_pdf, # <-- VARIABLE ACTUALIZADA
+                df_resultados=df_pdf,
+                observaciones_especiales=obs_pdf, 
+                campanas_activas_txt=campanas_txt
+            )
                         
                         def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
                         nombre_base = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}"
