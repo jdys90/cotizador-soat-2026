@@ -442,10 +442,7 @@ if carga_exitosa:
     if btn_generar:
         errores = []
         if not nombre: errores.append("Falta el Nombre.")
-        
-        # 👇 CONDICIONAMOS LA OBLIGATORIEDAD DEL DNI
-        if es_admin:
-                       
+                            
         if not marca_txt or not modelo_txt: errores.append("Faltan datos del vehículo.")
         if not placa or len(placa) != 6 or not placa.isalnum(): errores.append("La PLACA debe tener exactamente 6 caracteres alfanuméricos.")
         
