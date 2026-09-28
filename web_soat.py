@@ -599,6 +599,42 @@ if st.session_state.res is not None:
                         campanas_list = df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist()
                         campanas_txt = ", ".join(campanas_list) if campanas_list else ""
 
+                        # 1. Definimos qué mostrar en el PDF dependiendo de si hay datos
+                        dni_pdf = dni if dni else "Por confirmar"
+                        venc_pdf = fecha_venc.strftime('%d/%m/%Y') if es_admin else "Por confirmar"
+
+                        # 2. Pasamos estas nuevas variables al creador del PDF
+                        pdf_bytes = crear_pdf(
+                            cotizacion_nro=st.session_state.id, 
+                            cliente=nombre, 
+                            dni_ruc=dni_pdf,          
+                            celular=celular, 
+                            email=email,
+                            placa=placa, 
+                            marca=marca_txt, 
+                            modelo=modelo_txt, 
+                            uso=uso, 
+                            clase=clase_display, 
+                            asientos=asientos, 
+                            region=depto,
+                            fecha_vencimiento=venc_pdf, 
+                            df_resultados=df_pdf,
+                            observaciones_especiales=obs_pdf, 
+                            campanas_activas_txt=campanas_txt
+                        )
+                        
+                        def limpiar_txt(t): return re.sub(r'[^\w\s-]', '', str(t)).strip().replace(' ', '_')
+                        nombre_base = f"COTISOAT_{limpiar_txt(nombre)}_{limpiar_txt(marca_txt)}_{limpiar_txt(modelo_txt)}_{limpiar_txt(uso)}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}"
+                        
+                        png_bytes = exportar_pdf_a_png(pdf_bytes)
+                        st.success("✅ ¡Documentos generados!")
+                        
+                        col_pdf, col_img = st.columns(2)
+                        with col_pdf:
+                            st.download_button("📄 Descargar PDF", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
+                        with col_img:
+                            if png_bytes: st.download_button("🖼️ Descargar Imagen", data=png_bytes, file_name=f"{nombre_base}.png", mime="image/png", use_container_width=True)
+
                        
             # 1. Definimos qué mostrar en el PDF dependiendo de si hay datos
             dni_pdf = dni if dni else "Por confirmar"
