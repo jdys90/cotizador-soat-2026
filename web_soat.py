@@ -624,14 +624,16 @@ if st.session_state.res is not None:
             mejor_precio = df_pdf.iloc[0]['Precio'] if not df_pdf.empty else ""
             mejor_cia = df_pdf.iloc[0]['Aseguradora'] if not df_pdf.empty else ""
             
-            # Creamos el botón nativo de WhatsApp
-            mensaje_wa = f"Hola YQ, acabo de cotizar mi SOAT en su web para la placa {placa}. Me interesa la opción de {mejor_cia} por S/ {mejor_precio}. ¿Me ayudan a emitirlo?"
-            link_wa = f"https://wa.me/51906462225?text={mensaje_wa.replace(' ', '%20')}"
+           # Creamos el mensaje dinámico
+            mensaje_wa = f"Hola YQ, acabo de cotizar mi SOAT en su web para la placa {placa}. Me interesa la opción de {mejor_cia} por S/ {mejor_precio}."
+            
+            # NUEVO: Apuntamos a tu página de gracias, llevando el mensaje "a cuestas" en la URL
+            link_gracias = f"https://yqcorredores.com/gracias-soat/?msg={mensaje_wa.replace(' ', '%20')}"
 
-            # Mostramos los dos botones clave alineados
+            # El botón ahora dispara la página de gracias
             col_acc1, col_acc2 = st.columns(2)
             with col_acc1:
-                st.link_button("📲 CONTRATAR VÍA WHATSAPP", link_wa, type="primary", use_container_width=True)
+                st.link_button("📲 CONTRATAR VÍA WHATSAPP", link_gracias, type="primary", use_container_width=True)
             with col_acc2:
                 st.download_button("📄 DESCARGAR COTIZACIÓN", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
             
