@@ -331,18 +331,34 @@ if es_admin:
 if carga_exitosa:
     # --- 1. DATOS DEL CLIENTE ---
     st.subheader("1. Datos del Cliente")
-    c1_1, c1_2 = st.columns(2)
-    with c1_1: nombre = st.text_input("Nombre Completo")
-    with c1_2: dni = st.text_input("DNI / RUC", max_chars=11, placeholder="Solo números")
     
-    c2_1, c2_2 = st.columns(2)
-    with c2_1: placa = st.text_input("Placa", max_chars=6, placeholder="ABC1234").upper()
-    with c2_2: fecha_venc = st.date_input("Vencimiento SOAT", datetime.date.today(), format="DD/MM/YYYY")
-    
-    c3_1, c3_2 = st.columns(2)
-    with c3_1: celular = st.text_input("Celular / Whatsapp", max_chars=9, placeholder="Ej: 999123456")
-    with c3_2: email = st.text_input("Correo Electrónico", placeholder="cliente@correo.com")
-    
+    if es_admin:
+        # VISTA CORREDOR: Formulario completo para renovaciones y CRM perfecto
+        c1_1, c1_2 = st.columns(2)
+        with c1_1: nombre = st.text_input("Nombre Completo")
+        with c1_2: dni = st.text_input("DNI / RUC", max_chars=11, placeholder="Solo números")
+        
+        c2_1, c2_2 = st.columns(2)
+        with c2_1: placa = st.text_input("Placa", max_chars=6, placeholder="ABC1234").upper()
+        with c2_2: fecha_venc = st.date_input("Vencimiento SOAT", datetime.date.today(), format="DD/MM/YYYY")
+        
+        c3_1, c3_2 = st.columns(2)
+        with c3_1: celular = st.text_input("Celular / Whatsapp", max_chars=9, placeholder="Ej: 999123456")
+        with c3_2: email = st.text_input("Correo Electrónico", placeholder="cliente@correo.com")
+        
+    else:
+        # VISTA PÚBLICA (CRO OPTIMIZADO): Cero fricción, máxima captura de leads
+        dni = "" # Se envía vacío a la lógica para que no rompa el PDF ni el CRM
+        fecha_venc = datetime.date.today() # Fecha por defecto
+        
+        c1_1, c1_2 = st.columns(2)
+        with c1_1: nombre = st.text_input("Nombre Completo")
+        with c1_2: placa = st.text_input("Placa", max_chars=6, placeholder="ABC1234").upper()
+        
+        c2_1, c2_2 = st.columns(2)
+        with c2_1: celular = st.text_input("Celular / Whatsapp", max_chars=9, placeholder="Ej: 999123456")
+        with c2_2: email = st.text_input("Correo Electrónico", placeholder="cliente@correo.com")
+
     st.markdown("---")
     
     # --- 2. DATOS DEL VEHICULO ---
@@ -426,7 +442,10 @@ if carga_exitosa:
     if btn_generar:
         errores = []
         if not nombre: errores.append("Falta el Nombre.")
-        if not dni or not dni.isdigit(): errores.append("Ingrese un DNI/RUC válido.")
+        
+        # 👇 CONDICIONAMOS LA OBLIGATORIEDAD DEL DNI
+        if es_admin:
+                       
         if not marca_txt or not modelo_txt: errores.append("Faltan datos del vehículo.")
         if not placa or len(placa) != 6 or not placa.isalnum(): errores.append("La PLACA debe tener exactamente 6 caracteres alfanuméricos.")
         
