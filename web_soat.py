@@ -316,7 +316,7 @@ with col2:
 
 st.title("COTIZACION SOAT DIGITAL")
 # --- ACCESO CORREDOR (OCULTO EN BARRA LATERAL) ---
-with st.sidebar.expander("🛡️ Acceso Corredor"):
+with st.sidebar.expander("🛡️ Acceso Interno YQ"):
     codigo_admin = st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave")
     
 es_admin = (codigo_admin == "ADMIN2026")
