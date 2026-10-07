@@ -789,16 +789,22 @@ if carga_exitosa:
     st.markdown("---")
     st.subheader("2. Datos del Vehículo")
     
-    # 1. CARGAMOS TU BASE MAESTRA (catalogo_vehiculos_soat_peru_v2.csv)
+   # 1. CARGAMOS TU BASE MAESTRA
     try:
-        df_vehiculos = pd.read_csv('catalogo_vehiculos.csv', encoding='latin-1')
+        # Magia CRO: 'sep=None' obliga a Python a detectar si tu Excel usó comas o puntos y comas
+        df_vehiculos = pd.read_csv('catalogo_vehiculos.csv', encoding='latin-1', sep=None, engine='python')
+        
         for col in ['MARCA', 'MODELO', 'CLASE']:
             if col in df_vehiculos.columns:
                 df_vehiculos[col] = df_vehiculos[col].astype(str).str.upper().str.strip()
+                
         lista_marcas_maestra = sorted(df_vehiculos['MARCA'].dropna().unique().tolist())
-    except:
+    except Exception as e:
+        # Si falla, ahora te saldrá un mensaje rojo explicándote el motivo exacto
+        st.error(f"⚠️ Error leyendo catalogo_vehiculos.csv: {e}")
+        
         df_vehiculos = pd.DataFrame(columns=['MARCA', 'MODELO', 'CLASE', 'ASIENTOS', 'USO'])
-        lista_marcas_maestra = lista_marcas 
+        lista_marcas_maestra = lista_marcas
         
     c1, c2 = st.columns(2)
     
