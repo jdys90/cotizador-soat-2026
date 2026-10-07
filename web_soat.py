@@ -864,15 +864,26 @@ if carga_exitosa:
     if btn_generar:
         errores = []
         if not nombre: errores.append("Falta el Nombre.")
-        if not placa or len(placa) != 6 or not placa.isalnum(): errores.append("La PLACA debe tener 6 caracteres alfanuméricos.")
+        
+        # 1. Validación estricta de placa peruana
+        if not placa: 
+            errores.append("Falta la Placa.")
+        elif not re.match(r'^([A-Z0-9]{3}\d{3}|[A-Z0-9]{2}\d{4})$', placa): 
+            errores.append("⚠️ La PLACA no tiene un formato válido en Perú (Ej: ABC123 o AB1234).")
+            
         if not es_admin:
-            if not celular or not celular.isdigit() or len(celular) < 9: errores.append("Ingrese un celular válido.")
-            if not email or "@" not in email: errores.append("Ingrese un correo válido.")
+            # 2. Validación estricta de celular
+            if not celular or not re.match(r'^9\d{8}$', celular.strip()): 
+                errores.append("📱 Ingrese un celular válido de 9 dígitos (Ej: 999123456).")
+            # 3. Validación estricta de correo
+            if not email or not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email.strip()): 
+                errores.append("📧 Ingrese un correo electrónico real.")
 
         if errores:
             for e in errores: st.error(e)
         else:
             with st.spinner("Cotizando..."):
+                # (Aquí sigue el código normal de pytz.timezone...)
                 peru_tz = pytz.timezone('America/Lima')
                 now = datetime.datetime.now(peru_tz) 
                 
@@ -962,11 +973,37 @@ if st.session_state.res is not None:
                 df_pdf = df_visible[df_visible['Aseguradora'].isin(aseguradoras_seleccionadas)]
                 if st.button("📄 Generar Documentos Finales", type="primary"):
                     with st.spinner("Generando archivos..."):
-                        obs_pdf = " / ".join(df_pdf[df_pdf['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
-                        campanas_txt = ", ".join(df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist())
+                        # Inicializamos variables por seguridad para evitar NameError
+                        obs_pdf = ""
+                        campanas_txt = ""
+                        
+                        if 'Observaciones' in df_pdf.columns:
+                            obs_pdf = " / ".join(df_pdf[df_pdf['Observaciones'] != ""]['Observaciones'].astype(str).unique()).replace('🔥', '').strip()
+                        if 'Tiene_Campaña' in df_pdf.columns:
+                            campanas_txt = ", ".join(df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].astype(str).unique().tolist())
+                            
                         dni_pdf = dni if dni else "Por confirmar"
                         
-                        pdf_bytes = crear_pdf(st.session_state.id, nombre, dni_pdf, celular, email, placa, marca_txt, modelo_txt, uso, clase_display, asientos, depto, fecha_venc.strftime('%d/%m/%Y'), df_pdf, obs_pdf, campanas_txt)
+                        # Generación del PDF (Todo debe estar anidado aquí adentro)
+                        pdf_bytes = crear_pdf(
+                            cotizacion_nro=st.session_state.id, 
+                            cliente=nombre, 
+                            dni_ruc=dni_pdf, 
+                            celular=celular, 
+                            email=email, 
+                            placa=placa, 
+                            marca=marca_txt, 
+                            modelo=modelo_txt, 
+                            uso=uso, 
+                            clase=clase_display, 
+                            asientos=asientos, 
+                            region=depto, 
+                            fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'), 
+                            df_resultados=df_pdf, 
+                            observaciones_especiales=obs_pdf, 
+                            campanas_activas_txt=campanas_txt
+                        )
+                        
                         nombre_base = f"COTISOAT_{re.sub(r'[^a-zA-Z0-9]', '', nombre)}_{placa}_{datetime.datetime.now().strftime('%d%m%y_%H%M')}"
                         png_bytes = exportar_pdf_a_png(pdf_bytes)
                         
