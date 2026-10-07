@@ -789,36 +789,70 @@ if carga_exitosa:
     st.markdown("---")
     st.subheader("2. Datos del Vehículo")
     
+    # 1. CARGAMOS TU BASE MAESTRA (catalogo_vehiculos_soat_peru_v2.csv)
+    try:
+        df_vehiculos = pd.read_csv('catalogo_vehiculos.csv', encoding='latin-1')
+        for col in ['MARCA', 'MODELO', 'CLASE']:
+            if col in df_vehiculos.columns:
+                df_vehiculos[col] = df_vehiculos[col].astype(str).str.upper().str.strip()
+        lista_marcas_maestra = sorted(df_vehiculos['MARCA'].dropna().unique().tolist())
+    except:
+        df_vehiculos = pd.DataFrame(columns=['MARCA', 'MODELO', 'CLASE', 'ASIENTOS', 'USO'])
+        lista_marcas_maestra = lista_marcas 
+        
     c1, c2 = st.columns(2)
+    
+    # 2. LÓGICA DE EXTRACCIÓN (Procesamos la columna 2 primero)
+    with c2:
+        marca = st.selectbox("🚘 Marca", ["OTRA MARCA"] + lista_marcas_maestra)
+        
+        if marca == "OTRA MARCA":
+            marca_txt = st.text_input("Ingresa Marca:", placeholder="Ej: TOYOTA").upper()
+            modelo_opts = []
+        else:
+            marca_txt = marca
+            modelo_opts = sorted(df_vehiculos[df_vehiculos['MARCA'] == marca]['MODELO'].dropna().unique().tolist())
+            
+        mod = st.selectbox("🚙 Modelo", ["OTRO MODELO"] + modelo_opts)
+        
+        if mod == "OTRO MODELO" or marca == "OTRA MARCA": 
+            modelo_txt = st.text_input("Especificar Modelo:", placeholder="Ej: YARIS").upper()
+            clase_sugerida = "AUTOMÓVIL"
+            asientos_sugeridos = 5
+        else: 
+            modelo_txt = mod
+            try:
+                fila_veh = df_vehiculos[(df_vehiculos['MARCA'] == marca) & (df_vehiculos['MODELO'] == mod)].iloc[0]
+                clase_sugerida = str(fila_veh['CLASE']).upper()
+                asientos_sugeridos = int(float(fila_veh['ASIENTOS']))
+            except:
+                clase_sugerida = "AUTOMÓVIL"
+                asientos_sugeridos = 5
+
+    # 3. INTERFAZ INTELIGENTE (Procesamos la columna 1)
     with c1:
         lista_deptos = sorted(["LIMA", "AREQUIPA", "CUSCO", "LA LIBERTAD", "LAMBAYEQUE", "PIURA", "JUNIN", "ANCASH", "ICA", "SAN MARTIN", "LORETO", "UCAYALI", "CAJAMARCA", "HUANUCO", "TACNA", "PUNO", "AYACUCHO", "MOQUEGUA", "AMAZONAS", "APURIMAC", "HUANCAVELICA", "MADRE DE DIOS", "PASCO", "TUMBES"])
         try: index_def = lista_deptos.index("LIMA")
         except: index_def = 0
         depto = st.selectbox("📍 Departamento", lista_deptos, index=index_def)
+        
         uso = st.selectbox("📋 Uso", ["PARTICULAR", "TAXI", "CARGA", "TRANSPORTE PERSONAL", "URBANO", "INTERPROVINCIAL", "COMERCIAL","AMBULANCIA","SERVICIO ESCOLAR"])
     
-    with c2:
         mapa_clases = {"AUTOMÓVIL": "AUTOMOVIL", "STATION WAGON": "SW", "CAMIONETA RURAL / SUV": "SUV", "MULTIPROPÓSITO": "MULTIPROPOSITO", "CAMIONETA PANEL": "PANEL", "CAMIONETA VAN": "VAN", "MICROBUS": "MICROBUS", "MINIBUS": "MINIBUS", "OMNIBUS": "OMNIBUS", "CAMIONETA PICK UP": "PICK UP", "CAMIÓN BARANDA / FURGÓN": "CAMION", "CAMIÓN REMOLCADOR": "REMOLCADOR", "MAQUINARIA PESADA": "MAQUINARIA PESADA", "MOTO LINEAL": "MOTOCICLETA", "MOTO ELÉCTRICA": "MOTOCICLETA ELECTRICA", "TRIMOTO": "TRIMOTO", "CUATRIMOTO": "CUATRIMOTO", "MOTO FURGONETA": "FURGONETA"}
-        clase_display = st.selectbox("🚙 Clase", list(mapa_clases.keys()))
-        clase_interna = mapa_clases[clase_display]
-
+        lista_keys = list(mapa_clases.keys())
+        
+        try: idx_clase = lista_keys.index(clase_sugerida)
+        except: idx_clase = 0
+        
         if es_admin:
-            asientos = st.number_input("💺 Asientos", 1, 70, 5)
-            marca = st.selectbox("🚘 Marca", ["OTRA MARCA"] + lista_marcas)
-            if marca == "OTRA MARCA":
-                marca_txt = st.text_input("Ingresa Marca:").upper()
-                modelo_opts = []
-            else:
-                marca_txt = marca
-                modelo_opts = catalogo.get(marca, [])
-            mod = st.selectbox("🚙 Modelo", modelo_opts + ["OTRO MODELO"])
-            if mod == "OTRO MODELO" or marca == "OTRA MARCA": modelo_txt = st.text_input("Especificar Modelo:").upper()
-            else: modelo_txt = mod
+            clase_display = st.selectbox("🚙 Clase", lista_keys, index=idx_clase)
+            clase_interna = mapa_clases[clase_display]
+            asientos = st.number_input("💺 Asientos", 1, 70, value=asientos_sugeridos)
         else:
-            # Magia CRO: Ocultamos complejidad al cliente asumiendo variables promedio
-            asientos = 5
-            marca_txt = "OTRA MARCA"
-            modelo_txt = "OTRO MODELO"
+            clase_display = lista_keys[idx_clase]
+            clase_interna = mapa_clases[clase_display]
+            asientos = asientos_sugeridos
+            st.success(f"✔️ Vehículo detectado: {clase_display.title()} ({asientos} asientos)")
 
     st.markdown("<br>", unsafe_allow_html=True)
     btn_generar = st.button("🔍 GENERAR COTIZACIÓN", use_container_width=True)
