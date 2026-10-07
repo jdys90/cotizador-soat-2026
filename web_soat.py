@@ -1015,15 +1015,39 @@ if st.session_state.res is not None:
         else:
             # EXPERIENCIA DEL CLIENTE (CERO FRICCIÓN)
             df_pdf = df_visible 
-            obs_pdf = " / ".join(df_pdf[df_pdf['Observaciones'] != ""]['Observaciones'].unique()).replace('🔥', '').strip()
-            campanas_txt = ", ".join(df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].unique().tolist())
             
-            pdf_bytes = crear_pdf(st.session_state.id, nombre, "Por confirmar", celular, email, placa, marca_txt, modelo_txt, uso, clase_display, asientos, depto, "Por confirmar", df_pdf, obs_pdf, campanas_txt)
+            # Inicializamos variables por seguridad
+            obs_pdf = ""
+            campanas_txt = ""
+            
+            if 'Observaciones' in df_pdf.columns:
+                obs_pdf = " / ".join(df_pdf[df_pdf['Observaciones'] != ""]['Observaciones'].astype(str).unique()).replace('🔥', '').strip()
+            if 'Tiene_Campaña' in df_pdf.columns:
+                campanas_txt = ", ".join(df_pdf[df_pdf['Tiene_Campaña'] == True]['Aseguradora'].astype(str).unique().tolist())
+            
+            pdf_bytes = crear_pdf(
+                cotizacion_nro=st.session_state.id, 
+                cliente=nombre, 
+                dni_ruc="Por confirmar", 
+                celular=celular, 
+                email=email, 
+                placa=placa, 
+                marca=marca_txt, 
+                modelo=modelo_txt, 
+                uso=uso, 
+                clase=clase_display, 
+                asientos=asientos, 
+                region=depto, 
+                fecha_vencimiento="Por confirmar", 
+                df_resultados=df_pdf, 
+                observaciones_especiales=obs_pdf, 
+                campanas_activas_txt=campanas_txt
+            )
+            
             nombre_base = f"COTISOAT_Oficial_{re.sub(r'[^a-zA-Z0-9]', '', placa)}"
             
-            mejor_precio = df_pdf.iloc[0]['Precio'] if not df_pdf.empty else ""
-            mejor_cia = df_pdf.iloc[0]['Aseguradora'] if not df_pdf.empty else ""
-            mensaje_wa = f"Hola YQ, acabo de cotizar mi SOAT en su web para la placa {placa}. Me interesa la opción de {mejor_cia} por S/ {mejor_precio}."
+            # --- NUEVO MENSAJE DE WHATSAPP ---
+            mensaje_wa = f"Hola YQ, acabo de cotizar mi SOAT en su web para la placa {placa}. Quisiera que un asesor me ayude a elegir la mejor opción y emitir mi póliza."
             link_gracias = f"https://yqcorredores.com/gracias-soat/?msg={mensaje_wa.replace(' ', '%20')}"
 
             col_acc1, col_acc2 = st.columns(2)
