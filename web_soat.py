@@ -291,7 +291,7 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
         pdf.set_xy(10, y_start + h_row)
 
     # COBERTURAS
-    pdf.ln(5)
+    pdf.ln(2) # Reducimos el salto de línea para ganar espacio
     pdf.section_title("COBERTURAS PRINCIPALES")
     coberturas = [
         ("GASTOS MEDICOS", "S/ 27,500 (5 UIT)", "Atención médica, hospitalaria y quirúrgica."),
@@ -299,34 +299,33 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
         ("INCAPACIDAD", "S/ 5,500 (1 UIT)", "Pago diario por descanso médico temporal."),
         ("SEPELIO", "S/ 5,500 (1 UIT)", "Reembolso de gastos de funeral.")
     ]
+    # Reducimos la altura de las celdas de 6 a 5
     pdf.set_font('Arial', 'B', 8); pdf.set_text_color(100,100,100)
-    pdf.cell(50, 6, "BENEFICIO", "B", 0, 'L'); pdf.cell(40, 6, "MONTO", "B", 0, 'L'); pdf.cell(0, 6, "DETALLE", "B", 1, 'L')
+    pdf.cell(50, 5, "BENEFICIO", "B", 0, 'L'); pdf.cell(40, 5, "MONTO", "B", 0, 'L'); pdf.cell(0, 5, "DETALLE", "B", 1, 'L')
     
     for t, m, d in coberturas:
         pdf.set_font('Arial', 'B', 9); pdf.set_text_color(*AZUL)
-        pdf.cell(50, 6, t, "B", 0, 'L')
+        pdf.cell(50, 5, t, "B", 0, 'L')
         pdf.set_font('Arial', 'B', 9); pdf.set_text_color(0, 100, 0)
-        pdf.cell(40, 6, m, "B", 0, 'L')
+        pdf.cell(40, 5, m, "B", 0, 'L')
         pdf.set_font('Arial', '', 8); pdf.set_text_color(100,100,100)
-        pdf.cell(0, 6, d, "B", 1, 'L')
+        pdf.cell(0, 5, d, "B", 1, 'L')
 
-    pdf.ln(8)
-    pdf.set_text_color(120, 120, 120); pdf.set_font('Arial', '', 8)
-    pdf.cell(0, 4, "Las coberturas principales aplican para todas las compañías.", 0, 1, 'L')
-    pdf.cell(0, 4, "Precios incluyen IGV.", 0, 1, 'L')
-    pdf.cell(0, 4, "Vigencia de la cotización: 24 horas.", 0, 1, 'L')
-    pdf.cell(0, 4, "La cobertura inicia inmediatamente después de la emisión y pago.", 0, 1, 'L')
+    # --- PIE DE PÁGINA ESTILO "LETRA PEQUEÑA" (AHORRO DE ESPACIO) ---
+    pdf.ln(3) 
+    pdf.set_text_color(120, 120, 120); pdf.set_font('Arial', '', 7) 
     
-    # --- NUEVO DISCLAIMER LEGAL ---
-    pdf.ln(2) # Pequeño espacio extra para separarlo
-    pdf.set_font('Arial', 'I', 8) # Usamos letra Itálica (Cursiva) para destacar que es una nota
-    pdf.cell(0, 4, "Nota: Los precios mostrados son referenciales y pueden variar de acuerdo a las", 0, 1, 'L')
-    pdf.cell(0, 4, "caracteristicas exactas que indique su tarjeta de propiedad.", 0, 1, 'L')
+    # Condensamos las 4 reglas en una sola línea horizontal
+    pdf.cell(0, 3.5, "Las coberturas aplican para todas las compañías. | Precios incluyen IGV. | Vigencia: 24h. | Cobertura inmediata tras emisión.", 0, 1, 'L')
+    
+    # El Disclaimer legal en una sola línea con cursiva (Itálica)
+    pdf.set_font('Arial', 'I', 7) 
+    pdf.cell(0, 3.5, "Nota: Los precios mostrados son referenciales y pueden variar de acuerdo a las características exactas que indique su tarjeta de propiedad.", 0, 1, 'L')
     
     if campanas_activas_txt:
-        pdf.ln(2)
-        pdf.set_font('Arial', 'B', 8); pdf.set_text_color(*AZUL)
-        pdf.cell(0, 4, f"Campaña con: {campanas_activas_txt}", 0, 1, 'L')
+        pdf.ln(1)
+        pdf.set_font('Arial', 'B', 7); pdf.set_text_color(*AZUL)
+        pdf.cell(0, 3.5, f"Campaña con: {campanas_activas_txt}", 0, 1, 'L')
 
     return pdf.output(dest='S').encode('latin-1')
 
