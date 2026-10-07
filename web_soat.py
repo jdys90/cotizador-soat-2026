@@ -944,6 +944,9 @@ if st.session_state.res is not None:
         header = "<th>ASEGURADORA</th><th>GRUPO</th><th>PRECIO</th><th>COMISIÓN</th><th>OBSERVACIONES</th>" if es_admin else "<th>ASEGURADORA</th><th>PRECIO FINAL</th><th>OBSERVACIONES</th>"
 
         st.markdown(f"<div class='table-container'><table class='resultado-table'><thead><tr>{header}</tr></thead><tbody>{html_rows}</tbody></table></div>", unsafe_allow_html=True)
+        # --- AVISO LEGAL DE PRECIOS REFERENCIALES (SOLO CLIENTES) ---
+        if not es_admin:
+            st.caption("⚠️ **Nota:** Los precios mostrados son referenciales y pueden variar de acuerdo a las características exactas que indique su tarjeta de propiedad.")
         st.divider()
         
         if es_admin:
