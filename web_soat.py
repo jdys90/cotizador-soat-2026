@@ -203,9 +203,23 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
         h_row = 18 # Aumentamos el alto de la fila a 18mm para que quepa el texto largo
         x_start = pdf.get_x(); y_start = pdf.get_y()
         
-        # 1. ASEGURADORA (32mm)
-        pdf.set_font('Arial', 'B', 9); pdf.set_text_color(*NEGRO)
-        pdf.cell(32, h_row, aseg_nombre, "B", 0, 'C')
+        # 1. ASEGURADORA (32mm) - MODO LOGO INTELIGENTE
+        import os
+        
+        # Normalizamos el nombre para buscar el archivo de imagen
+        # Ej: "Pacífico" -> "logo_pacifico.png", "La Positiva" -> "logo_la_positiva.png"
+        nombre_limpio = c_key.lower().replace('í', 'i').replace(' ', '_')
+        ruta_logo = f"logo_{nombre_limpio}.png"
+        
+        if os.path.exists(ruta_logo):
+            # Si el logo existe, lo centramos matemáticamente en la celda
+            # w=24 es el ancho del logo, h_row es el alto de la fila (18)
+            pdf.image(ruta_logo, x=x_start + 4, y=y_start + 4, w=24)
+            pdf.cell(32, h_row, "", "B", 0, 'C') # Dibujamos la celda vacía solo para mantener el borde inferior
+        else:
+            # Plan B: Si no subiste el logo, mostramos el texto elegante
+            pdf.set_font('Arial', 'B', 9); pdf.set_text_color(*NEGRO)
+            pdf.cell(32, h_row, aseg_nombre, "B", 0, 'C')
         
         # 2. PRECIO (28mm)
         x_price = pdf.get_x()
