@@ -789,20 +789,24 @@ if carga_exitosa:
     st.markdown("---")
     st.subheader("2. Datos del Vehículo")
     
-   # 1. CARGAMOS TU BASE MAESTRA
+   # 1. CARGAMOS TU BASE MAESTRA (catalogo_vehiculos.csv)
     try:
-        # Magia CRO: 'sep=None' obliga a Python a detectar si tu Excel usó comas o puntos y comas
-        df_vehiculos = pd.read_csv('catalogo_vehiculos.csv', encoding='latin-1', sep=None, engine='python')
+        # 1. Blindaje contra Excel: Forzamos punto y coma (;) y limpiamos códigos invisibles (utf-8-sig)
+        df_vehiculos = pd.read_csv('catalogo_vehiculos.csv', sep=';', encoding='utf-8-sig')
         
+        # 2. Blindaje de Títulos: Quitamos espacios en blanco accidentales de las cabeceras
+        df_vehiculos.columns = df_vehiculos.columns.str.strip().str.upper()
+        
+        # 3. Limpieza interna de datos
         for col in ['MARCA', 'MODELO', 'CLASE']:
             if col in df_vehiculos.columns:
                 df_vehiculos[col] = df_vehiculos[col].astype(str).str.upper().str.strip()
                 
         lista_marcas_maestra = sorted(df_vehiculos['MARCA'].dropna().unique().tolist())
-    except Exception as e:
-        # Si falla, ahora te saldrá un mensaje rojo explicándote el motivo exacto
-        st.error(f"⚠️ Error leyendo catalogo_vehiculos.csv: {e}")
         
+    except Exception as e:
+        # En caso de emergencia, mostramos el error exacto y creamos una base vacía
+        st.error(f"⚠️ Error leyendo catalogo_vehiculos.csv: {e}")
         df_vehiculos = pd.DataFrame(columns=['MARCA', 'MODELO', 'CLASE', 'ASIENTOS', 'USO'])
         lista_marcas_maestra = lista_marcas
         
