@@ -889,41 +889,63 @@ if carga_exitosa:
     
     # 2. LÓGICA DE EXTRACCIÓN (Procesamos la columna 2 primero)
     with c2:
-        marca = st.selectbox("🚘 Marca", ["OTRA MARCA"] + lista_marcas_maestra)
+        # 1. Armamos la lista con un placeholder al inicio y "OTRA MARCA" al final
+        opciones_marca = ["-- Selecciona tu marca --"] + lista_marcas_maestra + ["OTRA MARCA"]
+        marca = st.selectbox("🚘 Marca", opciones_marca)
         
-        if marca == "OTRA MARCA":
-            marca_txt = st.text_input("Ingresa Marca:", placeholder="Ej: TOYOTA").upper()
-            modelo_opts = []
-        else:
-            marca_txt = marca
-            modelo_opts = sorted(df_vehiculos[df_vehiculos['MARCA'] == marca]['MODELO'].dropna().unique().tolist())
+        if marca == "-- Selecciona tu marca --":
+            # Estado neutro inicial: No mostramos campos de escritura
+            marca_txt = ""
+            mod = st.selectbox("🚙 Modelo", ["-- Esperando marca --"])
+            modelo_txt = ""
+            clase_sugerida = "AUTOMÓVIL"
+            asientos_sugeridos = 5
+            usos_permitidos = ["PARTICULAR"]
             
-        mod = st.selectbox("🚙 Modelo", ["OTRO MODELO"] + modelo_opts)
-        
-        if mod == "OTRO MODELO" or marca == "OTRA MARCA": 
+        elif marca == "OTRA MARCA":
+            # Plan de rescate manual
+            marca_txt = st.text_input("Ingresa Marca:", placeholder="Ej: TOYOTA").upper()
+            mod = st.selectbox("🚙 Modelo", ["OTRO MODELO"])
             modelo_txt = st.text_input("Especificar Modelo:", placeholder="Ej: YARIS").upper()
             clase_sugerida = "AUTOMÓVIL"
             asientos_sugeridos = 5
             usos_permitidos = ["PARTICULAR", "TAXI", "CARGA", "TRANSPORTE PERSONAL", "URBANO", "INTERPROVINCIAL", "COMERCIAL","AMBULANCIA","SERVICIO ESCOLAR"]
-        else: 
-            modelo_txt = mod
-            try:
-                fila_veh = df_vehiculos[(df_vehiculos['MARCA'] == marca) & (df_vehiculos['MODELO'] == mod)].iloc[0]
-                clase_sugerida = str(fila_veh['CLASE']).upper()
-                asientos_sugeridos = int(float(fila_veh['ASIENTOS']))
-                
-                # --- MAGIA CRO: FILTRO DINÁMICO DE USO ---
-                uso_csv = str(fila_veh.get('USO', 'PARTICULAR')).upper()
-                if uso_csv != 'NAN' and uso_csv != '':
-                    # Rompemos la lista separada por comas y limpiamos los espacios
-                    usos_permitidos = [u.strip() for u in uso_csv.split(',')]
-                else:
-                    usos_permitidos = ["PARTICULAR"]
-            except:
+            
+        else:
+            # Flujo automatizado feliz (El cliente seleccionó una marca real)
+            marca_txt = marca
+            modelo_opts = sorted(df_vehiculos[df_vehiculos['MARCA'] == marca]['MODELO'].dropna().unique().tolist())
+            
+            # Placeholder para el modelo, seguido de los modelos reales y la opción de escape al final
+            opciones_modelo = ["-- Selecciona modelo --"] + modelo_opts + ["OTRO MODELO"]
+            mod = st.selectbox("🚙 Modelo", opciones_modelo)
+            
+            if mod == "-- Selecciona modelo --":
+                modelo_txt = ""
+                clase_sugerida = "AUTOMÓVIL"
+                asientos_sugeridos = 5
+                usos_permitidos = ["PARTICULAR"]
+            elif mod == "OTRO MODELO": 
+                modelo_txt = st.text_input("Especificar Modelo:", placeholder="Ej: YARIS").upper()
                 clase_sugerida = "AUTOMÓVIL"
                 asientos_sugeridos = 5
                 usos_permitidos = ["PARTICULAR", "TAXI", "CARGA", "TRANSPORTE PERSONAL", "URBANO", "INTERPROVINCIAL", "COMERCIAL","AMBULANCIA","SERVICIO ESCOLAR"]
-
+            else: 
+                modelo_txt = mod
+                try:
+                    fila_veh = df_vehiculos[(df_vehiculos['MARCA'] == marca) & (df_vehiculos['MODELO'] == mod)].iloc[0]
+                    clase_sugerida = str(fila_veh['CLASE']).upper()
+                    asientos_sugeridos = int(float(fila_veh['ASIENTOS']))
+                    
+                    uso_csv = str(fila_veh.get('USO', 'PARTICULAR')).upper()
+                    if uso_csv != 'NAN' and uso_csv != '':
+                        usos_permitidos = [u.strip() for u in uso_csv.split(',')]
+                    else:
+                        usos_permitidos = ["PARTICULAR"]
+                except:
+                    clase_sugerida = "AUTOMÓVIL"
+                    asientos_sugeridos = 5
+                    usos_permitidos = ["PARTICULAR", "TAXI", "CARGA", "TRANSPORTE PERSONAL", "URBANO", "INTERPROVINCIAL", "COMERCIAL","AMBULANCIA","SERVICIO ESCOLAR"]
     # 3. INTERFAZ INTELIGENTE (Procesamos la columna 1)
     with c1:
         lista_deptos = sorted(["LIMA", "AREQUIPA", "CUSCO", "LA LIBERTAD", "LAMBAYEQUE", "PIURA", "JUNIN", "ANCASH", "ICA", "SAN MARTIN", "LORETO", "UCAYALI", "CAJAMARCA", "HUANUCO", "TACNA", "PUNO", "AYACUCHO", "MOQUEGUA", "AMAZONAS", "APURIMAC", "HUANCAVELICA", "MADRE DE DIOS", "PASCO", "TUMBES"])
