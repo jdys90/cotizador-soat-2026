@@ -319,7 +319,14 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
     pdf.cell(0, 4, "Vigencia de la cotización: 24 horas.", 0, 1, 'L')
     pdf.cell(0, 4, "La cobertura inicia inmediatamente después de la emisión y pago.", 0, 1, 'L')
     
+    # --- NUEVO DISCLAIMER LEGAL ---
+    pdf.ln(2) # Pequeño espacio extra para separarlo
+    pdf.set_font('Arial', 'I', 8) # Usamos letra Itálica (Cursiva) para destacar que es una nota
+    pdf.cell(0, 4, "Nota: Los precios mostrados son referenciales y pueden variar de acuerdo a las", 0, 1, 'L')
+    pdf.cell(0, 4, "caracteristicas exactas que indique su tarjeta de propiedad.", 0, 1, 'L')
+    
     if campanas_activas_txt:
+        pdf.ln(2)
         pdf.set_font('Arial', 'B', 8); pdf.set_text_color(*AZUL)
         pdf.cell(0, 4, f"Campaña con: {campanas_activas_txt}", 0, 1, 'L')
 
