@@ -167,20 +167,49 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
 
     # OFERTAS
     pdf.section_title("OFERTAS DISPONIBLES")
-    pdf.set_font('Arial', 'B', 10); pdf.set_fill_color(240, 240, 240); pdf.set_text_color(*NEGRO)
-    pdf.cell(50, 10, "ASEGURADORA", 1, 0, 'C', fill=True)
-    pdf.cell(50, 10, "PRECIO", 1, 0, 'C', fill=True)
-    pdf.cell(90, 10, "SOLICITUD", 1, 1, 'C', fill=True)
+    
+    # --- LECTURA AUTOMÁTICA DEL ARCHIVO DE BENEFICIOS ---
+    mapa_beneficios = {}
+    try:
+        import pandas as pd
+        df_ben = pd.read_csv('Beneficios_SOAT.csv', sep=None, engine='python', encoding='utf-8-sig')
+        df_ben.columns = df_ben.columns.str.strip().str.upper()
+        for _, r in df_ben.iterrows():
+            cia_csv = str(r.get('COMPAÑÍA', r.get('COMPANIA', ''))).strip().upper()
+            # Mapeo inteligente para evitar errores tipográficos
+            if "PAC" in cia_csv: c_key = "Pacífico"
+            elif "RIM" in cia_csv or "RÍM" in cia_csv: c_key = "Rimac"
+            elif "POS" in cia_csv: c_key = "La Positiva"
+            elif "MAP" in cia_csv: c_key = "Mapfre"
+            elif "PRO" in cia_csv: c_key = "Protecta"
+            else: c_key = str(r['COMPAÑÍA']).strip()
+            
+            mapa_beneficios[c_key] = {
+                "texto": str(r.get('BENEFICIOS', '')),
+                "link": str(r.get('ENLACE', ''))
+            }
+    except Exception as e:
+        pass # Si el archivo no está, simplemente no muestra beneficios extra
+    
+    # Cabecera de la tabla re-escalada
+    pdf.set_font('Arial', 'B', 8); pdf.set_fill_color(240, 240, 240); pdf.set_text_color(*NEGRO)
+    pdf.cell(32, 10, "ASEGURADORA", 1, 0, 'C', fill=True)
+    pdf.cell(28, 10, "PRECIO", 1, 0, 'C', fill=True)
+    pdf.cell(85, 10, "BENEFICIOS ADICIONALES", 1, 0, 'C', fill=True)
+    pdf.cell(45, 10, "SOLICITUD", 1, 1, 'C', fill=True)
     
     for _, row in df_resultados.iterrows():
-        h_row = 12
+        aseg_nombre = str(row['Aseguradora'])
+        h_row = 18 # Aumentamos el alto de la fila a 18mm para que quepa el texto largo
         x_start = pdf.get_x(); y_start = pdf.get_y()
         
-        pdf.set_font('Arial', '', 10); pdf.set_text_color(*NEGRO)
-        pdf.cell(50, h_row, str(row['Aseguradora']), "B", 0, 'C')
+        # 1. ASEGURADORA (32mm)
+        pdf.set_font('Arial', 'B', 9); pdf.set_text_color(*NEGRO)
+        pdf.cell(32, h_row, aseg_nombre, "B", 0, 'C')
         
-        x_price = pdf.get_x(); y_price = pdf.get_y()
-        pdf.line(x_price, y_price + h_row, x_price + 50, y_price + h_row) 
+        # 2. PRECIO (28mm)
+        x_price = pdf.get_x()
+        pdf.line(x_price, y_start + h_row, x_price + 28, y_start + h_row) 
         
         tiene_campana = row.get('Tiene_Campaña', False)
         try:
@@ -189,32 +218,65 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
         except: precio_actual = 0; precio_lista = 0
             
         if tiene_campana and precio_actual < precio_lista:
-            pdf.set_font('Arial', '', 9); pdf.set_text_color(*GRIS)
+            pdf.set_font('Arial', '', 8); pdf.set_text_color(*GRIS)
             txt_old = f"S/ {precio_lista:.2f}"
             w_old = pdf.get_string_width(txt_old)
-            pdf.text(x_price + 8, y_price + 9, txt_old)
+            pdf.text(x_price + 4, y_start + 7, txt_old)
             pdf.set_draw_color(*GRIS)
-            pdf.line(x_price + 7, y_price + 7.5, x_price + 9 + w_old, y_price + 7.5)
-            pdf.set_font('Arial', 'B', 14); pdf.set_text_color(*AZUL)
-            pdf.text(x_price + 12 + w_old, y_price + 9, f"S/ {precio_actual:.2f}")
+            pdf.line(x_price + 3, y_start + 6, x_price + 5 + w_old, y_start + 6)
+            
+            pdf.set_font('Arial', 'B', 12); pdf.set_text_color(*AZUL)
+            pdf.text(x_price + 4, y_start + 13, f"S/ {precio_actual:.2f}")
         else:
-            pdf.set_font('Arial', 'B', 14); pdf.set_text_color(*NEGRO)
+            pdf.set_font('Arial', 'B', 12); pdf.set_text_color(*NEGRO)
             try: txt_p = f"S/ {precio_actual:.2f}"
             except: txt_p = str(row['Precio'])
-            pdf.set_xy(x_price, y_price)
-            pdf.cell(50, h_row, txt_p, 0, 0, 'C')
+            pdf.set_xy(x_price, y_start)
+            pdf.cell(28, h_row, txt_p, 0, 0, 'C')
+            
+        # 3. BENEFICIOS (85mm)
+        x_ben = x_price + 28
+        pdf.set_xy(x_ben, y_start + 2) 
+        pdf.set_draw_color(*NEGRO)
+        pdf.line(x_ben, y_start + h_row, x_ben + 85, y_start + h_row) 
+        
+        datos_ben = mapa_beneficios.get(aseg_nombre, {"texto": "", "link": ""})
+        txt_ben = datos_ben["texto"]
+        link_ben = datos_ben["link"]
+        
+        if txt_ben and txt_ben != "nan":
+            pdf.set_font('Arial', '', 7); pdf.set_text_color(80, 80, 80)
+            # multi_cell hace que el texto largo se acomode automáticamente hacia abajo
+            pdf.multi_cell(85, 3.5, txt_ben, 0, 'L') 
+            if link_ben and link_ben != "nan":
+                pdf.set_x(x_ben)
+                pdf.set_font('Arial', 'U', 7); pdf.set_text_color(*AZUL)
+                pdf.cell(85, 4, "Ver legales y condiciones >", 0, 0, 'L', link=link_ben)
+        else:
+            pdf.set_font('Arial', 'I', 7); pdf.set_text_color(150, 150, 150)
+            pdf.cell(85, h_row, "Emisión inmediata garantizada.", 0, 0, 'L')
 
-        pdf.set_xy(x_price + 50, y_price)
-        x_btn = pdf.get_x()
-        pdf.cell(90, h_row, "", "B", 0)
-        msg = f"Hola YQ, abrí mi PDF de cotización y quiero emitir mi SOAT de {row['Aseguradora']} a S/ {precio_actual:.2f} para la placa {placa}."
+        # 4. SOLICITUD Y BOTÓN (45mm)
+        x_btn = x_ben + 85
+        pdf.set_xy(x_btn, y_start)
+        pdf.cell(45, h_row, "", "B", 0) 
+        
+        msg = f"Hola YQ, abrí mi PDF de cotización y quiero emitir mi SOAT de {aseg_nombre} a S/ {precio_actual:.2f} para la placa {placa}."
         link = f"https://wa.me/51906462225?text={msg.replace(' ', '%20')}"
         pdf.set_fill_color(*VERDE_WA)
-        pdf.rect(x_btn + 15, y_start + 3, 60, 8, 'F')
-        pdf.set_xy(x_btn + 15, y_start + 3)
-        pdf.set_font('Arial', 'B', 9); pdf.set_text_color(255, 255, 255)
-        pdf.cell(60, 8, "LO QUIERO AHORA >", 0, 0, 'C', link=link)
-        pdf.set_text_color(*NEGRO); pdf.set_draw_color(0,0,0); pdf.ln(11)
+        
+        # Botón dinámico centrado
+        w_btn = 38
+        h_btn = 7
+        y_btn = y_start + ((h_row - h_btn) / 2) 
+        pdf.rect(x_btn + (45 - w_btn)/2, y_btn, w_btn, h_btn, 'F')
+        pdf.set_xy(x_btn + (45 - w_btn)/2, y_btn)
+        pdf.set_font('Arial', 'B', 8); pdf.set_text_color(255, 255, 255)
+        pdf.cell(w_btn, h_btn, "LO QUIERO AHORA >", 0, 0, 'C', link=link)
+        
+        # Reset de coordenadas para la siguiente fila
+        pdf.set_text_color(*NEGRO); pdf.set_draw_color(0,0,0)
+        pdf.set_xy(10, y_start + h_row)
 
     # COBERTURAS
     pdf.ln(5)
