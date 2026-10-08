@@ -962,8 +962,13 @@ if carga_exitosa:
             clase_display = lista_keys[idx_clase]
             clase_interna = mapa_clases[clase_display]
             asientos = asientos_sugeridos
-            st.success(f"✔️ Vehículo detectado: {clase_display.title()} ({asientos} asientos)")
-
+            
+            # --- MAGIA CRO: Condicionar el mensaje de detección ---
+            if marca == "-- Selecciona tu marca --" or mod == "-- Selecciona modelo --" or mod == "-- Esperando marca --":
+                st.info("🔍 Selecciona tu marca y modelo para identificar tu vehículo.")
+            else:
+                st.success(f"✔️ Vehículo detectado: {clase_display.title()} ({asientos} asientos)")
+                
     st.markdown("<br>", unsafe_allow_html=True)
     btn_generar = st.button("🔍 GENERAR COTIZACIÓN", use_container_width=True)
     st.markdown("<br>", unsafe_allow_html=True) 
