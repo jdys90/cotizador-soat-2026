@@ -828,18 +828,8 @@ if origen_url != "web":
 else:
     st.write("### 🚗 Cotiza y contrata en línea:")
 
-# --- ACCESO CORREDOR ---
-with st.expander("🛡️ Acceso Interno YQ"):
-    codigo_admin = st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave")
-    es_admin = (codigo_admin == "ADMIN2026")
-    
-    if es_admin:
-        st.success("Modo Corredor Activado")
-        if st.button("📥 DESCARGAR HISTORIAL"):
-            df_historial = descargar_historial_google()
-            if not df_historial.empty:
-                csv = df_historial.to_csv(index=False).encode('utf-8-sig')
-                st.download_button("💾 Guardar CSV", csv, f"Historial_{datetime.datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+# --- ACCESO CORREDOR (LÓGICA INVISIBLE) ---
+es_admin = (st.session_state.get("clave_admin", "") == "ADMIN2026")
 
 if carga_exitosa:
     # --- FORMULARIO OPTIMIZADO CRO ---
@@ -1178,4 +1168,18 @@ if st.session_state.res is not None:
 
 if es_admin:
     st.markdown("---")
+    
+    # --- PANEL VISUAL DEL ASESOR (AL FINAL DE LA PÁGINA) ---
+st.markdown("<br><br><br>", unsafe_allow_html=True) # Espacio grande para separarlo del contenido del cliente
+with st.expander("🛡️ Acceso Interno YQ (Solo Empleados)"):
+    # Al ponerle el key="clave_admin", se conecta automáticamente con la parte de arriba
+    st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave", key="clave_admin")
+    
+    if es_admin:
+        st.success("✅ Modo Corredor Activado. Sube al inicio para cotizar con opciones avanzadas.")
+        if st.button("📥 DESCARGAR HISTORIAL SOAT"):
+            df_historial = descargar_historial_google()
+            if not df_historial.empty:
+                csv = df_historial.to_csv(index=False).encode('utf-8-sig')
+                st.download_button("💾 Guardar CSV", csv, f"Historial_{datetime.datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
     mostrar_panel_administrador()
