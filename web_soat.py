@@ -25,14 +25,17 @@ st.set_page_config(page_title="Cotizador SOAT Digital", layout="centered", page_
 def aplicar_estilos_css():
     st.markdown("""
     <style>
-        /* Ocultar cabeceras y pies de página nativos (Fuerza Bruta a nuevos identificadores) */
-        #MainMenu, header, footer, [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stBottom"] {
+        /* 1. Ocultar cabeceras, pies de página y menú nativos */
+        header, footer, [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stBottom"], [data-testid="stDecoration"] {
             display: none !important; 
             visibility: hidden !important; 
         }
         
-        /* Destruir cualquier rastro de la marca de agua rastreando su enlace */
-        a[href^="https://streamlit.io"] { display: none !important; }
+        /* 2. Destruir marca de agua y barra Embed (Fuerza bruta global) */
+        a[href*="streamlit"] { display: none !important; pointer-events: none !important; }
+        button[title="View fullscreen"] { display: none !important; }
+        .stApp > header { display: none !important; }
+        .stApp > footer { display: none !important; }
         
         /* Ajustar el margen inferior para que el botón verde no quede volando */
         .block-container { padding-bottom: 6rem !important; }
