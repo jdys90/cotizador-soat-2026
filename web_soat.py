@@ -1169,17 +1169,23 @@ if st.session_state.res is not None:
 if es_admin:
     st.markdown("---")
     
-    # --- PANEL VISUAL DEL ASESOR (AL FINAL DE LA PÁGINA) ---
-st.markdown("<br><br><br>", unsafe_allow_html=True) # Espacio grande para separarlo del contenido del cliente
-with st.expander("🛡️ Acceso Interno YQ (Solo Empleados)"):
-    # Al ponerle el key="clave_admin", se conecta automáticamente con la parte de arriba
-    st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave", key="clave_admin")
+# --- PANEL VISUAL DEL ASESOR (AL FINAL DE LA PÁGINA) ---
+    st.markdown("<br><br><br>", unsafe_allow_html=True) # Espacio grande para separarlo del contenido del cliente
     
-    if es_admin:
-        st.success("✅ Modo Corredor Activado. Sube al inicio para cotizar con opciones avanzadas.")
-        if st.button("📥 DESCARGAR HISTORIAL SOAT"):
-            df_historial = descargar_historial_google()
-            if not df_historial.empty:
-                csv = df_historial.to_csv(index=False).encode('utf-8-sig')
-                st.download_button("💾 Guardar CSV", csv, f"Historial_{datetime.datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
-    mostrar_panel_administrador()
+    with st.expander("🛡️ Acceso Interno YQ (Solo Empleados)"):
+        # Al ponerle el key="clave_admin", se conecta automáticamente con la parte de arriba
+        st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave", key="clave_admin")
+        
+        # TODO LO QUE ESTÉ DENTRO DE ESTE 'IF' DEBE TENER SANGRÍA ADICIONAL
+        if es_admin:
+            st.success("✅ Modo Corredor Activado. Sube al inicio para cotizar con opciones avanzadas.")
+            
+            if st.button("📥 DESCARGAR HISTORIAL SOAT"):
+                df_historial = descargar_historial_google()
+                if not df_historial.empty:
+                    csv = df_historial.to_csv(index=False).encode('utf-8-sig')
+                    st.download_button("💾 Guardar CSV", csv, f"Historial_{datetime.datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+            
+            st.markdown("---")
+            # Ahora el panel está protegido por la contraseña
+            mostrar_panel_administrador()
