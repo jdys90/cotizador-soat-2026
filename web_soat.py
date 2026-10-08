@@ -31,23 +31,77 @@ def aplicar_estilos_css():
             visibility: hidden !important; 
         }
         
-        /* 2. DESTRUIR MARCA DE AGUA (Built with Streamlit) */
+        /* 2. DESTRUIR MARCA DE AGUA (Footer nativo) */
         footer {visibility: hidden !important; display: none !important;}
         .stApp > footer {display: none !important;}
         [data-testid="stBottom"] {display: none !important; visibility: hidden !important;}
         
-        /* Cazar enlaces y textos específicos de Streamlit */
-        a[href*="streamlit"] {display: none !important; pointer-events: none !important;}
+        /* 3. DESTRUIR LA BARRA GRIS INFERIOR DE EMBED (NIVEL DIOS) */
+        /* Esto caza los nombres dinámicos que Streamlit genera para la barra */
+        div[class^="embeddedAppMetaInfoBar"] { display: none !important; visibility: hidden !important; opacity: 0 !important; }
+        div[class*="embeddedAppMetaInfoBar"] { display: none !important; visibility: hidden !important; opacity: 0 !important; }
+        div[class^="viewerBadge"] { display: none !important; visibility: hidden !important; opacity: 0 !important; }
         
-        /* 3. DESTRUIR BOTÓN FULLSCREEN EMBEBIDO */
-        button[title="View fullscreen"], button[title*="fullscreen"] {display: none !important;}
+        /* Cazar enlaces y botones residuales */
+        a[href*="streamlit"] {display: none !important; pointer-events: none !important;}
+        button[title*="fullscreen"], button[title*="Fullscreen"] {display: none !important;}
         [data-testid="StyledFullScreenButton"] {display: none !important;}
         
-        /* Ajustar margen inferior */
-        .block-container { padding-bottom: 2rem !important; }
+        /* Ajustar margen inferior para que se pegue a tu web */
+        .block-container { padding-bottom: 1rem !important; }
 
         /* --- VARIABLES DE COLOR --- */
+        :root {
+            --bg-color: #F8F9FA;
+            --table-bg: #FFFFFF;
+            --text-main: #212529;
+            --header-bg: #f0f2f6;
+            --accent-color: #0066CC;
+        }
+
+        /* Botón de acción principal (Generar Cotización) */
+        div[data-testid="stButton"] button {
+            background-color: #2456A6 !important;
+            color: white !important;
+            border: 2px solid #2456A6 !important;
+            padding: 0.75rem 2rem !important;
+            font-size: 18px !important;
+            font-weight: bold !important;
+            border-radius: 8px !important;
+        }
+        div[data-testid="stButton"] button:hover {
+            background-color: #1a428a !important;
+            border-color: #1a428a !important;
+            color: white !important;
+            opacity: 0.9 !important;
+        }
+
+        /* Botón WhatsApp */
+        div[data-testid="stLinkButton"] a {
+            background-color: #25D366 !important; 
+            color: white !important; 
+            border: 1px solid #25D366 !important;
+            border-radius: 8px !important;
+            text-decoration: none !important;
+            font-weight: 600 !important;
+            display: flex !important;
+            justify-content: center !important;
+            height: 42px !important;
+            align-items: center !important;
+        }
         
+        /* Botón Descargar PDF */
+        div[data-testid="stDownloadButton"] button {
+            background-color: #2456A6 !important; 
+            color: white !important; 
+            border: 1px solid #2456A6 !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            height: 42px !important;
+            width: 100% !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
         :root {
             --bg-color: #F8F9FA;
             --table-bg: #FFFFFF;
