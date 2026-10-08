@@ -31,27 +31,26 @@ def aplicar_estilos_css():
             visibility: hidden !important; 
         }
         
-        /* 2. DESTRUIR MARCA DE AGUA (Footer nativo) */
+        /* 2. DESTRUIR MARCA DE AGUA Y FOOTERS */
         footer {visibility: hidden !important; display: none !important;}
         .stApp > footer {display: none !important;}
-        [data-testid="stBottom"] {display: none !important; visibility: hidden !important;}
+        [data-testid="stBottom"], [data-testid="stBottomBar"] {display: none !important;}
         
-        /* 3. DESTRUIR LA BARRA GRIS INFERIOR DE EMBED (NIVEL DIOS) */
-        /* Esto caza los nombres dinámicos que Streamlit genera para la barra */
-        div[class^="embeddedAppMetaInfoBar"] { display: none !important; visibility: hidden !important; opacity: 0 !important; }
-        div[class*="embeddedAppMetaInfoBar"] { display: none !important; visibility: hidden !important; opacity: 0 !important; }
-        div[class^="viewerBadge"] { display: none !important; visibility: hidden !important; opacity: 0 !important; }
+        /* 3. CAZADOR DE LA FRANJA GRIS (Built with Streamlit / Fullscreen) */
+        [data-testid="stViewerBadge"] {display: none !important;}
+        [class*="embeddedAppMetaInfoBar"] { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; height: 0px !important; }
+        [class*="viewerBadge"] { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
         
         /* Cazar enlaces y botones residuales */
         a[href*="streamlit"] {display: none !important; pointer-events: none !important;}
         button[title*="fullscreen"], button[title*="Fullscreen"] {display: none !important;}
         [data-testid="StyledFullScreenButton"] {display: none !important;}
         
-        /* Ajustar margen inferior para que se pegue a tu web */
-        .block-container { padding-bottom: 1rem !important; }
+        /* Eliminar espacio sobrante debajo del botón azul */
+        .block-container { padding-bottom: 0rem !important; }
 
         /* --- VARIABLES DE COLOR --- */
-        
+    
         :root {
             --bg-color: #F8F9FA;
             --table-bg: #FFFFFF;
