@@ -829,17 +829,17 @@ else:
     st.write("### 🚗 Cotiza y contrata en línea:")
 
 # --- ACCESO CORREDOR ---
-with st.sidebar.expander("🛡️ Acceso Interno YQ"):
+with st.expander("🛡️ Acceso Interno YQ"):
     codigo_admin = st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave")
-es_admin = (codigo_admin == "ADMIN2026")
-
-if es_admin:
-    st.sidebar.success("Modo Corredor Activado")
-    if st.sidebar.button("📥 DESCARGAR HISTORIAL"):
-        df_historial = descargar_historial_google()
-        if not df_historial.empty:
-            csv = df_historial.to_csv(index=False).encode('utf-8-sig')
-            st.sidebar.download_button("💾 Guardar CSV", csv, f"Historial_{datetime.datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+    es_admin = (codigo_admin == "ADMIN2026")
+    
+    if es_admin:
+        st.success("Modo Corredor Activado")
+        if st.button("📥 DESCARGAR HISTORIAL"):
+            df_historial = descargar_historial_google()
+            if not df_historial.empty:
+                csv = df_historial.to_csv(index=False).encode('utf-8-sig')
+                st.download_button("💾 Guardar CSV", csv, f"Historial_{datetime.datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
 
 if carga_exitosa:
     # --- FORMULARIO OPTIMIZADO CRO ---
