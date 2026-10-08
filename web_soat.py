@@ -25,20 +25,41 @@ st.set_page_config(page_title="Cotizador SOAT Digital", layout="centered", page_
 def aplicar_estilos_css():
     st.markdown("""
     <style>
-        /* 1. Ocultar cabeceras, pies de página y menú nativos */
-        header, footer, [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stBottom"], [data-testid="stDecoration"] {
+        /* 1. Destruir la cabecera, barra superior y menú nativo */
+        header, [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"] {
             display: none !important; 
             visibility: hidden !important; 
         }
         
-        /* 2. Destruir marca de agua y barra Embed (Fuerza bruta global) */
-        a[href*="streamlit"] { display: none !important; pointer-events: none !important; }
-        button[title="View fullscreen"] { display: none !important; }
-        .stApp > header { display: none !important; }
-        .stApp > footer { display: none !important; }
+        /* 2. Destruir de raíz el Footer embebido (Marca de agua y Fullscreen) */
+        footer, [data-testid="stBottom"], [data-testid="stFooter"] {
+            display: none !important; 
+            visibility: hidden !important; 
+            opacity: 0 !important;
+        }
+        
+        /* 3. Cazar el texto y enlace de Streamlit por su contenido */
+        a[href*="streamlit"] { 
+            display: none !important; 
+            pointer-events: none !important; 
+        }
+        
+        /* 4. Cazar el botón de Fullscreen por su título */
+        button[title*="fullscreen"], button[title*="Fullscreen"] { 
+            display: none !important; 
+        }
         
         /* Ajustar el margen inferior para que el botón verde no quede volando */
-        .block-container { padding-bottom: 6rem !important; }
+        .block-container { padding-bottom: 4rem !important; }
+
+        /* --- A CONTINUACIÓN MANTIENES TUS VARIABLES ORIGINALES --- */
+        :root {
+            --bg-color: #F8F9FA;
+            --table-bg: #FFFFFF;
+            --text-main: #212529;
+            --header-bg: #f0f2f6;
+            --accent-color: #0066CC;
+        }
 
         :root {
             --bg-color: #F8F9FA;
