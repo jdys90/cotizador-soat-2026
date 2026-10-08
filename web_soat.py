@@ -25,42 +25,29 @@ st.set_page_config(page_title="Cotizador SOAT Digital", layout="centered", page_
 def aplicar_estilos_css():
     st.markdown("""
     <style>
-        /* 1. Destruir la cabecera, barra superior y menú nativo */
-        header, [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"] {
+        /* 1. Ocultar cabeceras y menú nativo */
+        header, [data-testid="stHeader"], [data-testid="stToolbar"] {
             display: none !important; 
             visibility: hidden !important; 
         }
         
-        /* 2. Destruir de raíz el Footer embebido (Marca de agua y Fullscreen) */
-        footer, [data-testid="stBottom"], [data-testid="stFooter"] {
-            display: none !important; 
-            visibility: hidden !important; 
-            opacity: 0 !important;
-        }
+        /* 2. DESTRUIR MARCA DE AGUA (Built with Streamlit) */
+        footer {visibility: hidden !important; display: none !important;}
+        .stApp > footer {display: none !important;}
+        [data-testid="stBottom"] {display: none !important; visibility: hidden !important;}
         
-        /* 3. Cazar el texto y enlace de Streamlit por su contenido */
-        a[href*="streamlit"] { 
-            display: none !important; 
-            pointer-events: none !important; 
-        }
+        /* Cazar enlaces y textos específicos de Streamlit */
+        a[href*="streamlit"] {display: none !important; pointer-events: none !important;}
         
-        /* 4. Cazar el botón de Fullscreen por su título */
-        button[title*="fullscreen"], button[title*="Fullscreen"] { 
-            display: none !important; 
-        }
+        /* 3. DESTRUIR BOTÓN FULLSCREEN EMBEBIDO */
+        button[title="View fullscreen"], button[title*="fullscreen"] {display: none !important;}
+        [data-testid="StyledFullScreenButton"] {display: none !important;}
         
-        /* Ajustar el margen inferior para que el botón verde no quede volando */
-        .block-container { padding-bottom: 4rem !important; }
+        /* Ajustar margen inferior */
+        .block-container { padding-bottom: 2rem !important; }
 
-        /* --- A CONTINUACIÓN MANTIENES TUS VARIABLES ORIGINALES --- */
-        :root {
-            --bg-color: #F8F9FA;
-            --table-bg: #FFFFFF;
-            --text-main: #212529;
-            --header-bg: #f0f2f6;
-            --accent-color: #0066CC;
-        }
-
+        /* --- VARIABLES DE COLOR --- */
+        
         :root {
             --bg-color: #F8F9FA;
             --table-bg: #FFFFFF;
@@ -1199,8 +1186,8 @@ if st.session_state.res is not None:
 # 7. PIE DE PÁGINA: GUÍA INFORMATIVA Y ACCESO ADMIN
 # ==========================================
 
-# --- SECCIÓN INFORMATIVA Y DE CONFIANZA (SOLO VISTA CLIENTE) ---
-if not es_admin:
+# --- SECCIÓN INFORMATIVA Y DE CONFIANZA (SOLO VISTA CLIENTE Y SOLO SI NO ESTÁ EMBEBIDO) ---
+if not es_admin and origen_url != "web":
     st.markdown("---")
     st.markdown("<h3 style='text-align: center; color: #212529;'>¿Cómo funciona nuestro SOAT 100% Digital?</h3><br>", unsafe_allow_html=True)
     
