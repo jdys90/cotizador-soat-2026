@@ -1166,26 +1166,54 @@ if st.session_state.res is not None:
     else:
         st.error("No hay precios disponibles.")
 
-if es_admin:
+# ==========================================
+# 7. PIE DE PÁGINA: GUÍA INFORMATIVA Y ACCESO ADMIN
+# ==========================================
+
+# --- SECCIÓN INFORMATIVA Y DE CONFIANZA (SOLO VISTA CLIENTE) ---
+if not es_admin:
     st.markdown("---")
+    st.markdown("<h3 style='text-align: center; color: #212529;'>¿Cómo funciona nuestro SOAT 100% Digital?</h3><br>", unsafe_allow_html=True)
     
-# --- PANEL VISUAL DEL ASESOR (AL FINAL DE LA PÁGINA) ---
-    st.markdown("<br><br><br>", unsafe_allow_html=True) # Espacio grande para separarlo del contenido del cliente
+    col_paso1, col_paso2, col_paso3 = st.columns(3)
+    with col_paso1:
+        st.markdown("#### 1️⃣ Cotiza al instante")
+        st.write("Ingresa la placa de tu vehículo y tus datos de contacto de forma 100% segura.")
+    with col_paso2:
+        st.markdown("#### 2️⃣ Compara y elige")
+        st.write("Nuestro sistema consulta en tiempo real con las mejores aseguradoras del país para mostrarte tus opciones sin filtros.")
+    with col_paso3:
+        st.markdown("#### 3️⃣ Recibe y viaja")
+        st.write("Confirma tu opción, y recibe tu SOAT electrónico oficial directamente en tu correo y WhatsApp, válido de inmediato ante cualquier autoridad.")
     
-    with st.expander("🛡️ Acceso Interno YQ (Solo Empleados)"):
-        # Al ponerle el key="clave_admin", se conecta automáticamente con la parte de arriba
-        st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave", key="clave_admin")
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # Testimonios rápidos
+    st.markdown("<h4 style='text-align: center; color: #212529;'>Conductores que ya confían en YQ Corredores</h4>", unsafe_allow_html=True)
+    c_test1, c_test2, c_test3 = st.columns(3)
+    with c_test1:
+        st.info("⭐⭐⭐⭐⭐\n\n«Súper rápido y transparente. Pude ver los precios de todas las aseguradoras en una sola pantalla. Pagué y me mandaron el SOAT al WhatsApp.»\n\n**- Jorge R.**")
+    with c_test2:
+        st.info("⭐⭐⭐⭐⭐\n\n«Prefiero comprar aquí. Si alguna vez tengo un choque, sé que el equipo de YQ me va a contestar el teléfono para asesorarme de verdad.»\n\n**- Úrsula F.**")
+    with c_test3:
+        st.info("⭐⭐⭐⭐⭐\n\n«Increíble la facilidad. Hice todo desde mi celular sin papeleos. El certificado digital me llegó al instante y ya verifiqué que aparece activo.»\n\n**- Roberto C.**")
+
+# --- PANEL VISUAL DEL ASESOR (AL FINAL DE LA PÁGINA PARA TODOS) ---
+st.markdown("<br><br><br>", unsafe_allow_html=True) # Espacio grande para separarlo del contenido principal
+
+with st.expander("🛡️ Acceso Interno YQ (Solo Empleados)"):
+    # Al ponerle el key="clave_admin", se conecta automáticamente con la lógica de arriba
+    st.text_input("Código de Autorización", type="password", placeholder="Ingresa clave", key="clave_admin")
+    
+    if es_admin:
+        st.success("✅ Modo Corredor Activado. Sube al inicio para cotizar con opciones avanzadas.")
         
-        # TODO LO QUE ESTÉ DENTRO DE ESTE 'IF' DEBE TENER SANGRÍA ADICIONAL
-        if es_admin:
-            st.success("✅ Modo Corredor Activado. Sube al inicio para cotizar con opciones avanzadas.")
-            
-            if st.button("📥 DESCARGAR HISTORIAL SOAT"):
-                df_historial = descargar_historial_google()
-                if not df_historial.empty:
-                    csv = df_historial.to_csv(index=False).encode('utf-8-sig')
-                    st.download_button("💾 Guardar CSV", csv, f"Historial_{datetime.datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
-            
-            st.markdown("---")
-            # Ahora el panel está protegido por la contraseña
-            mostrar_panel_administrador()
+        if st.button("📥 DESCARGAR HISTORIAL SOAT"):
+            df_historial = descargar_historial_google()
+            if not df_historial.empty:
+                csv = df_historial.to_csv(index=False).encode('utf-8-sig')
+                st.download_button("💾 Guardar CSV", csv, f"Historial_{datetime.datetime.now().strftime('%Y%m%d')}.csv", "text/csv")
+        
+        st.markdown("---")
+        # El panel de administración solo se muestra si la clave es correcta
+        mostrar_panel_administrador()
