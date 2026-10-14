@@ -850,16 +850,16 @@ if origen_url != "web":
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if os.path.exists("logo_web.png"): st.image("logo_web.png", use_container_width=True)
-    st.title("COTIZACION SOAT DIGITAL")
+    st.markdown("<h1 style='text-align: center; color: #03318e; font-weight: 800;'>COTIZACIÓN SOAT DIGITAL</h1>", unsafe_allow_html=True)
 else:
-    st.write("### 🚗 Cotiza y contrata en línea:")
+    st.markdown("<h3 style='color: #03318e; font-weight: 700; margin-bottom: 10px;'>Cotiza y contrata en línea</h3>", unsafe_allow_html=True)
 
 # --- ACCESO CORREDOR (LÓGICA INVISIBLE) ---
 es_admin = (st.session_state.get("clave_admin", "") == "ADMIN2026")
 
 if carga_exitosa:
     # --- FORMULARIO OPTIMIZADO CRO ---
-    st.subheader("1. Datos del Cliente")
+    st.markdown("<h4 style='color: #03318e; font-weight: 700; margin-top: 10px;'>1. Datos del Cliente</h4>", unsafe_allow_html=True)
     
     if es_admin:
         c1_1, c1_2 = st.columns(2)
@@ -883,58 +883,52 @@ if carga_exitosa:
         with c2_2: email = st.text_input("Correo Electrónico", placeholder="cliente@correo.com")
 
     st.markdown("---")
-    st.subheader("2. Datos del Vehículo")
+    st.markdown("<h4 style='color: #03318e; font-weight: 700; margin-top: 10px;'>2. Datos del Vehículo</h4>", unsafe_allow_html=True)
     
     # 1. CARGAMOS TU BASE MAESTRA (catalogo_vehiculos.csv)
     try:
         df_vehiculos = pd.read_csv('catalogo_vehiculos.csv', sep=';', encoding='utf-8-sig')
         df_vehiculos.columns = df_vehiculos.columns.str.strip().str.upper()
         
-        # Limpieza incluyendo la columna USO
         for col in ['MARCA', 'MODELO', 'CLASE', 'USO']:
             if col in df_vehiculos.columns:
                 df_vehiculos[col] = df_vehiculos[col].astype(str).str.upper().str.strip()
                 
         lista_marcas_maestra = sorted(df_vehiculos['MARCA'].dropna().unique().tolist())
     except Exception as e:
-        st.error(f"⚠️ Error leyendo catalogo_vehiculos.csv: {e}")
+        st.error(f"Error leyendo catalogo_vehiculos.csv: {e}")
         df_vehiculos = pd.DataFrame(columns=['MARCA', 'MODELO', 'CLASE', 'ASIENTOS', 'USO'])
         lista_marcas_maestra = lista_marcas 
         
     c1, c2 = st.columns(2)
     
-    # 2. LÓGICA DE EXTRACCIÓN (Procesamos la columna 2 primero)
+    # 2. LÓGICA DE EXTRACCIÓN (Columna 2 sin emojis)
     with c2:
-        # 1. Armamos la lista con un placeholder al inicio y "OTRA MARCA" al final
         opciones_marca = ["-- Selecciona tu marca --"] + lista_marcas_maestra + ["OTRA MARCA"]
-        marca = st.selectbox("🚘 Marca", opciones_marca)
+        marca = st.selectbox("Marca", opciones_marca)
         
         if marca == "-- Selecciona tu marca --":
-            # Estado neutro inicial: No mostramos campos de escritura
             marca_txt = ""
-            mod = st.selectbox("🚙 Modelo", ["-- Esperando marca --"])
+            mod = st.selectbox("Modelo", ["-- Esperando marca --"])
             modelo_txt = ""
             clase_sugerida = "AUTOMÓVIL"
             asientos_sugeridos = 5
             usos_permitidos = ["PARTICULAR"]
             
         elif marca == "OTRA MARCA":
-            # Plan de rescate manual
             marca_txt = st.text_input("Ingresa Marca:", placeholder="Ej: TOYOTA").upper()
-            mod = st.selectbox("🚙 Modelo", ["OTRO MODELO"])
+            mod = st.selectbox("Modelo", ["OTRO MODELO"])
             modelo_txt = st.text_input("Especificar Modelo:", placeholder="Ej: YARIS").upper()
             clase_sugerida = "AUTOMÓVIL"
             asientos_sugeridos = 5
             usos_permitidos = ["PARTICULAR", "TAXI", "CARGA", "TRANSPORTE PERSONAL", "URBANO", "INTERPROVINCIAL", "COMERCIAL","AMBULANCIA","SERVICIO ESCOLAR"]
             
         else:
-            # Flujo automatizado feliz (El cliente seleccionó una marca real)
             marca_txt = marca
             modelo_opts = sorted(df_vehiculos[df_vehiculos['MARCA'] == marca]['MODELO'].dropna().unique().tolist())
             
-            # Placeholder para el modelo, seguido de los modelos reales y la opción de escape al final
             opciones_modelo = ["-- Selecciona modelo --"] + modelo_opts + ["OTRO MODELO"]
-            mod = st.selectbox("🚙 Modelo", opciones_modelo)
+            mod = st.selectbox("Modelo", opciones_modelo)
             
             if mod == "-- Selecciona modelo --":
                 modelo_txt = ""
@@ -961,18 +955,18 @@ if carga_exitosa:
                 except:
                     clase_sugerida = "AUTOMÓVIL"
                     asientos_sugeridos = 5
-                    usos_permitidos = ["PARTICULAR", "TAXI", "CARGA", "TRANSPORTE PERSONAL", "URBANO", "INTERPROVINCIAL", "COMERCIAL","AMBULANCIA","SERVICIO ESCOLAR"]
-    # 3. INTERFAZ INTELIGENTE (Procesamos la columna 1)
+                    usos_permitidos = ["PARTICULAR", "TAXI", "CARGA", "TRANSPORTE PERSONAL", "URBANO", "INTERPROVINCIAL", "COMERCIAL","AMBULANCIA","SERVICIO ESCOLAR"]   
+                
+    # 3. INTERFAZ INTELIGENTE (Columna 1 sin emojis)
     with c1:
         lista_deptos = sorted(["LIMA", "AREQUIPA", "CUSCO", "LA LIBERTAD", "LAMBAYEQUE", "PIURA", "JUNIN", "ANCASH", "ICA", "SAN MARTIN", "LORETO", "UCAYALI", "CAJAMARCA", "HUANUCO", "TACNA", "PUNO", "AYACUCHO", "MOQUEGUA", "AMAZONAS", "APURIMAC", "HUANCAVELICA", "MADRE DE DIOS", "PASCO", "TUMBES"])
         try: index_def = lista_deptos.index("LIMA")
         except: index_def = 0
-        depto = st.selectbox("📍 Departamento", lista_deptos, index=index_def)
+        depto = st.selectbox("Departamento", lista_deptos, index=index_def)
         
-        # --- APLICAMOS LA LISTA FILTRADA AL SELECTOR DE USO ---
         try: idx_uso = usos_permitidos.index("PARTICULAR")
         except: idx_uso = 0
-        uso = st.selectbox("📋 Uso", usos_permitidos, index=idx_uso)
+        uso = st.selectbox("Uso", usos_permitidos, index=idx_uso)
     
         mapa_clases = {"AUTOMÓVIL": "AUTOMOVIL", "STATION WAGON": "SW", "CAMIONETA RURAL / SUV": "SUV", "MULTIPROPÓSITO": "MULTIPROPOSITO", "CAMIONETA PANEL": "PANEL", "CAMIONETA VAN": "VAN", "MICROBUS": "MICROBUS", "MINIBUS": "MINIBUS", "OMNIBUS": "OMNIBUS", "CAMIONETA PICK UP": "PICK UP", "CAMIÓN BARANDA / FURGÓN": "CAMION", "CAMIÓN REMOLCADOR": "REMOLCADOR", "MAQUINARIA PESADA": "MAQUINARIA PESADA", "MOTO LINEAL": "MOTOCICLETA", "MOTO ELÉCTRICA": "MOTOCICLETA ELECTRICA", "TRIMOTO": "TRIMOTO", "CUATRIMOTO": "CUATRIMOTO", "MOTO FURGONETA": "FURGONETA"}
         lista_keys = list(mapa_clases.keys())
@@ -981,23 +975,21 @@ if carga_exitosa:
         except: idx_clase = 0
         
         if es_admin:
-            clase_display = st.selectbox("🚙 Clase", lista_keys, index=idx_clase)
+            clase_display = st.selectbox("Clase", lista_keys, index=idx_clase)
             clase_interna = mapa_clases[clase_display]
-            asientos = st.number_input("💺 Asientos", 1, 70, value=asientos_sugeridos)
+            asientos = st.number_input("Asientos", 1, 70, value=asientos_sugeridos)
         else:
             clase_display = lista_keys[idx_clase]
             clase_interna = mapa_clases[clase_display]
             asientos = asientos_sugeridos
             
-            # --- MAGIA CRO: Condicionar el mensaje de detección ---
             if marca == "-- Selecciona tu marca --" or mod == "-- Selecciona modelo --" or mod == "-- Esperando marca --":
-                st.info("🔍 Selecciona tu marca y modelo para identificar tu vehículo.")
+                st.info("Selecciona tu marca y modelo para identificar tu vehículo.")
             else:
-                st.success(f"✔️ Vehículo detectado: {clase_display.title()} ({asientos} asientos)")
+                st.success(f"Vehículo detectado: {clase_display.title()} ({asientos} asientos)")
                 
     st.markdown("<br>", unsafe_allow_html=True)
-    btn_generar = st.button("🔍 GENERAR COTIZACIÓN", use_container_width=True)
-    st.markdown("<br>", unsafe_allow_html=True) 
+    btn_generar = st.button("GENERAR COTIZACIÓN", use_container_width=True)
     
     if 'res' not in st.session_state: st.session_state.res = None
     if 'id' not in st.session_state: st.session_state.id = None
@@ -1192,8 +1184,8 @@ if st.session_state.res is not None:
             link_gracias = f"https://yqcorredores.com/gracias-soat/?msg={mensaje_wa.replace(' ', '%20')}"
 
             col_acc1, col_acc2 = st.columns(2)
-            with col_acc1: st.link_button("📲 CONTRATAR VÍA WHATSAPP", link_gracias, type="primary", use_container_width=True)
-            with col_acc2: st.download_button("📄 DESCARGAR COTIZACIÓN", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
+            with col_acc1: st.link_button("CONTRATAR VÍA WHATSAPP", link_gracias, type="primary", use_container_width=True)
+            with col_acc2: st.download_button("DESCARGAR COTIZACIÓN", data=pdf_bytes, file_name=f"{nombre_base}.pdf", mime="application/pdf", use_container_width=True)
     else:
         st.error("No hay precios disponibles.")
 
@@ -1208,15 +1200,15 @@ if not es_admin and origen_url != "web":
     
     col_paso1, col_paso2, col_paso3 = st.columns(3)
     with col_paso1:
-        st.markdown("#### 1️⃣ Cotiza al instante")
+        st.markdown("<h4 style='color: #03318e;'>1. Cotiza al instante</h4>", unsafe_allow_html=True)
         st.write("Ingresa la placa de tu vehículo y tus datos de contacto de forma 100% segura.")
     with col_paso2:
-        st.markdown("#### 2️⃣ Compara y elige")
+        st.markdown("<h4 style='color: #03318e;'>2. Compara y elige</h4>", unsafe_allow_html=True)
         st.write("Nuestro sistema consulta en tiempo real con las mejores aseguradoras del país para mostrarte tus opciones sin filtros.")
     with col_paso3:
-        st.markdown("#### 3️⃣ Recibe y viaja")
+        st.markdown("<h4 style='color: #03318e;'>3. Recibe y viaja</h4>", unsafe_allow_html=True)
         st.write("Confirma tu opción, y recibe tu SOAT electrónico oficial directamente en tu correo y WhatsApp, válido de inmediato ante cualquier autoridad.")
-    
+        
     st.markdown("<br><br>", unsafe_allow_html=True)
     
     # Testimonios rápidos
