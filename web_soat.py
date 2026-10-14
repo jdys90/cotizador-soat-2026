@@ -332,11 +332,11 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
     for t, m, d in coberturas:
         pdf.set_font('Arial', 'B', 9); pdf.set_text_color(*AZUL)
         pdf.cell(50, 5, t, "B", 0, 'L')
-        pdf.set_font('Arial', 'B', 9); pdf.set_text_color(0, 100, 0) # <--- EL VERDE GENÉRICO
+        # ¡AQUÍ ESTÁ LA MAGIA! Aplicamos tu Verde Teal corporativo
+        pdf.set_font('Arial', 'B', 9); pdf.set_text_color(*VERDE_TEAL) 
         pdf.cell(40, 5, m, "B", 0, 'L')
         pdf.set_font('Arial', '', 8); pdf.set_text_color(100,100,100)
         pdf.cell(0, 5, d, "B", 1, 'L')
-
     # --- PIE DE PÁGINA ESTILO "LETRA PEQUEÑA" (AHORRO DE ESPACIO) ---
     pdf.ln(3) 
     pdf.set_text_color(120, 120, 120); pdf.set_font('Arial', '', 7) 
