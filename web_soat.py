@@ -54,26 +54,32 @@ def aplicar_estilos_css():
         :root {
             --bg-color: #F8F9FA;
             --table-bg: #FFFFFF;
-            --text-main: #212529;
+            --text-main: #03318e;
             --header-bg: #f0f2f6;
             --accent-color: #0066CC;
         }
 
         /* Botón de acción principal (Generar Cotización) */
         div[data-testid="stButton"] button {
-            background-color: #2456A6 !important;
+            background-color: #03318e !important;
             color: white !important;
-            border: 2px solid #2456A6 !important;
+            border: 2px solid #03318e !important;
             padding: 0.75rem 2rem !important;
             font-size: 18px !important;
             font-weight: bold !important;
             border-radius: 8px !important;
         }
         div[data-testid="stButton"] button:hover {
-            background-color: #1a428a !important;
-            border-color: #1a428a !important;
+            background-color: #022266 !important;
+            border-color: #022266 !important;
             color: white !important;
             opacity: 0.9 !important;
+        }
+        /* Cazador de tipografía para botón principal */
+        div[data-testid="stButton"] button * {
+            font-size: 18px !important;
+            font-weight: bold !important;
+            color: white !important;
         }
 
         /* Botón WhatsApp */
@@ -92,14 +98,20 @@ def aplicar_estilos_css():
         
         /* Botón Descargar PDF */
         div[data-testid="stDownloadButton"] button {
-            background-color: #2456A6 !important; 
+            background-color: #03318e !important; 
             color: white !important; 
-            border: 1px solid #2456A6 !important;
+            border: 1px solid #03318e !important;
             border-radius: 8px !important;
-            font-weight: 600 !important;
             height: 42px !important;
             width: 100% !important;
         }
+        div[data-testid="stDownloadButton"] button:hover {
+            background-color: #022266 !important;
+        }
+        div[data-testid="stDownloadButton"] button * {
+            font-weight: 600 !important;
+            color: white !important;
+        }    
     </style>
     """, unsafe_allow_html=True)
        
@@ -108,12 +120,12 @@ aplicar_estilos_css()
 # ==========================================
 # 2. MOTOR GENERADOR DE PDF
 # ==========================================
-AZUL = (0, 102, 204)     
+AZUL = (3, 49, 142)       # Nuevo Azul Profundo corporativo
+VERDE_TEAL = (8, 150, 133)# Nuevo Verde Elegante
 FONDO = (245, 250, 255)  
-NEGRO = (0, 0, 0)
+NEGRO = (60, 60, 60)      # Suavizamos el negro puro a Gris Carbón para mejor lectura
 GRIS = (120, 120, 120)
-VERDE_WA = (37, 211, 102)
-
+VERDE_WA = (37, 211, 102) # Mantenemos el verde original solo para WhatsApp
 def exportar_pdf_a_png(pdf_bytes):
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -289,7 +301,7 @@ def crear_pdf(cotizacion_nro, cliente, dni_ruc, celular, email, placa, marca, mo
         
         msg = f"Hola YQ, abrí mi PDF de cotización y quiero emitir mi SOAT de {aseg_nombre} a S/ {precio_actual:.2f} para la placa {placa}."
         link = f"https://wa.me/51906462225?text={msg.replace(' ', '%20')}"
-        pdf.set_fill_color(*VERDE_WA)
+        pdf.set_fill_color(*VERDE_TEAL) # Aplicamos el Verde Teal premium al botón del PDF
         
         # Botón dinámico centrado
         w_btn = 38
@@ -1067,7 +1079,7 @@ if st.session_state.res is not None:
             if tiene_promo:
                 try:
                     p_old, p_new = float(row['Precio_Lista']), float(row['Precio'])
-                    precio_cell = f"<div><span style='text-decoration:line-through; color:#999; font-size:13px;'>S/ {p_old:.2f}</span><br><span style='color:#25D366; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span></div>" if p_new < p_old else f"<span style='color:inherit; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span>"
+                    precio_cell = f"<div><span style='text-decoration:line-through; color:#999; font-size:13px;'>S/ {p_old:.2f}</span><br><span style='color:#089685; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span></div>" if p_new < p_old else f"<span style='color:inherit; font-weight:bold; font-size:16px;'>S/ {p_new:.2f}</span>"
                 except: precio_cell = f"<span style='color:inherit; font-weight:bold; font-size:16px;'>{row['Precio']}</span>"
             else:
                 try: precio_cell = f"<span style='color:inherit; font-weight:bold; font-size:16px;'>S/ {float(row['Precio']):.2f}</span>"
@@ -1192,7 +1204,7 @@ if st.session_state.res is not None:
 # --- SECCIÓN INFORMATIVA Y DE CONFIANZA (SOLO VISTA CLIENTE Y SOLO SI NO ESTÁ EMBEBIDO) ---
 if not es_admin and origen_url != "web":
     st.markdown("---")
-    st.markdown("<h3 style='text-align: center; color: #212529;'>¿Cómo funciona nuestro SOAT 100% Digital?</h3><br>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #03318e;'>¿Cómo funciona nuestro SOAT 100% Digital?</h3><br>", unsafe_allow_html=True)
     
     col_paso1, col_paso2, col_paso3 = st.columns(3)
     with col_paso1:
@@ -1208,7 +1220,7 @@ if not es_admin and origen_url != "web":
     st.markdown("<br><br>", unsafe_allow_html=True)
     
     # Testimonios rápidos
-    st.markdown("<h4 style='text-align: center; color: #212529;'>Conductores que ya confían en YQ Corredores</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; color: #03318e;'>Conductores que ya confían en YQ Corredores</h4>", unsafe_allow_html=True)
     c_test1, c_test2, c_test3 = st.columns(3)
     with c_test1:
         st.info("⭐⭐⭐⭐⭐\n\n«Súper rápido y transparente. Pude ver los precios de todas las aseguradoras en una sola pantalla. Pagué y me mandaron el SOAT al WhatsApp.»\n\n**- Jorge R.**")
