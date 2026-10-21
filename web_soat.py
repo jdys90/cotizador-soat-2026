@@ -769,7 +769,7 @@ def enviar_notificacion(cot_id, fecha_hora, rol, cliente, celular, placa, marca,
 
         url_crm = "https://www.zohoapis.com/crm/v2/Leads"
         headers = {"Authorization": f"Zoho-oauthtoken {access_token}"}
-        payload = {"data": [{"Last_Name": cliente, "Mobile": str(celular), "Lead_Source": "Cotizador SOAT Web", "Description": f"ID Cotización: {cot_id} | Fecha: {fecha_hora} | Rol: {rol} | DNI: {dni} | Vehículo: {marca} {modelo} ({placa}) | Mejor Oferta: S/ {precio_min} ({cia_min})"}]}
+        payload = {"data": [{"Last_Name": cliente, "Mobile": str(celular), "Lead_Source": "Cotizador SOAT Web", "Seguro_de_Inter_s": "SOAT", "Description": f"ID Cotización: {cot_id} | Fecha: {fecha_hora} | Rol: {rol} | DNI: {dni} | Vehículo: {marca} {modelo} ({placa}) | Mejor Oferta: S/ {precio_min} ({cia_min})"}]}
         res_crm = requests.post(url_crm, headers=headers, json=payload)
         
         if res_crm.status_code in [200, 201]: return True, "Exito"
